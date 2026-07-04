@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pth
+*.pth.tar
+venv/
+.venv/
+.env
+
+# Dataset 
+database/
+mvtec_tile/
+mvtec_anomaly_detection/
+dataset/
+*.zip
+*.tar.gz
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Node.js
+node_modules/
+.env
+
+# React Native
+.expo/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
