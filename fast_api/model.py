@@ -4,7 +4,9 @@ import torchvision.models as models
 
 def build_model(num_classes: int = 2, freeze_base: bool = False) -> nn.Module:
     
-    model = models.resnet50(weights=None)   # No pretrained weights — we load our own
+    ## No pretrained weights — we load our own 
+    
+    model = models.resnet50(weights=None)   
 
     if freeze_base:
         for param in model.parameters():
