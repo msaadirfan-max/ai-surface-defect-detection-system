@@ -3,7 +3,7 @@
 
 A machine learning proof-of-concept built during a 6-week software engineering internship. The system automates visual quality inspection on a ceramic tile production line using transfer learning, replacing error-prone manual inspection with a consistent, auditable AI pipeline.
 
-A factory worker inspects thousands of tiles per shift. Accuracy degrades with fatigue, results vary between inspectors, and there is no digital record of decisions made. This system addresses all three problems.
+A factory worker inspects thousands of tiles surface per shift. Accuracy degrades with fatigue, results vary between inspectors, and there is no digital record of decisions made. This system addresses all three problems.
 
 ---
 
@@ -152,13 +152,13 @@ ai-qa-system/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/msaadirfan-max/ai-qa-system.git
-cd ai-qa-system
+git clone https://github.com/msaadirfan-max/ai-surface-defect--detection-system.git
+cd ai-surface-defect--detection-system
 ```
 
 ### 2. Download the trained model
 
-The model weights are not stored in this repository (100 MB+ file). Download `best_model_mvtec.pth` from the [latest release](https://github.com/msaadirfan-max/ai-qa-system/releases) and place it in `ai-service/`.
+The model weights are not stored in this repository (100 MB+ file). Download `best_model_mvtec.pth` from the [latest release](https://github.com/msaadirfan-max/ai-surface-defect--detection-system/releases) and place it in `ai-service/`.
 
 ### 3. Run the AI microservice
 
