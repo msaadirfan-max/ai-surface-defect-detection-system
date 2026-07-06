@@ -6,4 +6,5 @@ torchvision>=0.15.0
 opencv-python-headless==4.9.0.80
 Pillow>=10.0.0
 numpy>=1.24.0
+grad-cam>=1.4.0
  

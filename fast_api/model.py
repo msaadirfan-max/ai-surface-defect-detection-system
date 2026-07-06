@@ -1,6 +1,6 @@
+
 import torch.nn as nn
 import torchvision.models as models
-
 
 def build_model(num_classes: int = 2, freeze_base: bool = False) -> nn.Module:
     
@@ -19,3 +19,4 @@ def build_model(num_classes: int = 2, freeze_base: bool = False) -> nn.Module:
     )
 
     return model
+
