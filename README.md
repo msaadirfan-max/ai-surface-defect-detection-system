@@ -11,7 +11,7 @@ A factory worker inspects thousands of tiles surface per shift. Accuracy degrade
 
 > Upload a tile image → get an instant PASS / FAIL verdict with confidence score
 
-![System Architecture](docs/architecture.png)
+<!--![System Architecture](docs/architecture.png)
 <!-- Replace with actual screenshot once frontend is connected -->
 
 ---
