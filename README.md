@@ -84,7 +84,7 @@ Early layers of ResNet already encode edges, textures, and surface patterns from
 
 ### Dataset
 
-[MVTec Anomaly Detection Dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad) — flat-surface texture categories only.
+[MVTec Anomaly Detection Dataset](https://datasetninja.com/mvtec-ad) — flat-surface texture categories only.
 
 | Category | Included | Reason |
 |---|---|---|
