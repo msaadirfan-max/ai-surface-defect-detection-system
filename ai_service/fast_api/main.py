@@ -9,8 +9,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.concurrency import run_in_threadpool
 
-from .model import build_model
-from .preprocess import preprocess_image
+from model import build_model
+from preprocess import preprocess_image
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
 import numpy as np
@@ -22,7 +22,7 @@ from PIL import Image as PILImage
 
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))            # Get the directory of the current file (main.py)
 MODEL_PATH = os.path.join(BASE_DIR, "best_model_mvtec.pth")
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB, matches the frontend's own limit
@@ -183,10 +183,10 @@ async def predict_explain(file: UploadFile = File(...)):
         # /health, from being served concurrently)
         def _forward():
             with torch.no_grad():
-                logits = state.model(input_tensor)
-                probs  = torch.softmax(logits, dim=1)
-                pred_idx = torch.argmax(probs, dim=1).item()
-                confidence = probs[0][pred_idx].item()
+                logits = state.model(input_tensor)      # Converting preprocessed image
+                probs  = torch.softmax(logits, dim=1)   # Making it range btw 0.0 and 1.0
+                pred_idx = torch.argmax(probs, dim=1).item()   # Selecting with max value
+                confidence = probs[0][pred_idx].item()    # Convert into standard python float number 
             return pred_idx, confidence
 
         pred_idx, confidence = await run_in_threadpool(_forward)
@@ -204,7 +204,7 @@ async def predict_explain(file: UploadFile = File(...)):
 
         grayscale_cam = await run_in_threadpool(_gradcam)
 
-        # Overlay heatmap on original image
+        # Overlay heatmap on original image as till now it is invisible matrix
         overlay = show_cam_on_image(
             img_resized.astype(np.float32),
             grayscale_cam,
@@ -213,8 +213,8 @@ async def predict_explain(file: UploadFile = File(...)):
 
         # Encode overlay as base64 PNG to send in JSON response
         overlay_pil = PILImage.fromarray(overlay)
-        buffer      = io.BytesIO()
-        overlay_pil.save(buffer, format="PNG")
+        buffer      = io.BytesIO()           # Creates a temporary memory virtual file
+        overlay_pil.save(buffer, format="PNG")  # Save and convert to img and save in virtual memory
         gradcam_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     except Exception as e:
