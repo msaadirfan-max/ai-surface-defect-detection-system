@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  
-} from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { type User } from "../types/index";
 
 interface AuthContextType {
@@ -69,7 +63,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Safely memoize derived auth state to stay in sync perfectly
   const isAuthenticated = token !== null;
   const isAdmin = user?.role === "admin";
-
 
   // Provide the context value to children components
   return (

@@ -1,6 +1,6 @@
 import React from "react";
 
-
+// Define the props for the ResultCard component
 interface ResultCardProps {
   status: "normal" | "defective";
   confidence: number;
@@ -10,10 +10,11 @@ interface ResultCardProps {
   gradCamLoading: boolean;
 }
 
+
+// ResultCard component that displays the result of an image analysis
 const ResultCard: React.FC<ResultCardProps> = (props) => {
-  return ( 
+  return (
     <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-100">
-      
       {/* Dynamic Badge */}
       <div className="mb-4">
         {props.status === "normal" ? (
@@ -30,10 +31,12 @@ const ResultCard: React.FC<ResultCardProps> = (props) => {
       {/* Metrics */}
       <div className="space-y-2 text-gray-700 mb-6">
         <p className="text-sm">
-          <span className="font-semibold text-gray-900">Confidence:</span> {(props.confidence * 100).toFixed(1)}%
+          <span className="font-semibold text-gray-900">Confidence:</span>{" "}
+          {(props.confidence * 100).toFixed(1)}%
         </p>
         <p className="text-sm">
-          <span className="font-semibold text-gray-900">Inference Time:</span> {props.inferenceTimeMs} ms
+          <span className="font-semibold text-gray-900">Inference Time:</span>{" "}
+          {props.inferenceTimeMs} ms
         </p>
       </div>
 
@@ -41,24 +44,38 @@ const ResultCard: React.FC<ResultCardProps> = (props) => {
       <div className="grid grid-cols-2 gap-4">
         {/* Left Col: Original Image */}
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Original Image</h4>
-          <img src={props.imageUrl} alt="Result" className="rounded-lg max-h-64 object-cover w-full border border-gray-200" />
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+            Original Image
+          </h4>
+          <img
+            src={props.imageUrl}
+            alt="Result"
+            className="rounded-lg max-h-64 object-cover w-full border border-gray-200"
+          />
         </div>
 
         {/* Right Col: Heatmap Slot */}
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Grad-CAM Heatmap</h4>
-          
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+            Grad-CAM Heatmap
+          </h4>
+
           {props.gradCamLoading ? (
             <div className="flex items-center justify-center h-48 bg-gray-50 border border-dashed rounded-lg">
-              <p className="text-sm text-gray-500 animate-pulse">Analyzing defects...</p>
+              <p className="text-sm text-gray-500 animate-pulse">
+                Analyzing defects...
+              </p>
             </div>
           ) : props.gradCam ? (
-            <img 
+            <img
               // Prefixes the base64 data string cleanly if not already prefixed
-              src={props.gradCam.startsWith("data:") ? props.gradCam : `data:image/png;base64,${props.gradCam}`} 
-              alt="Grad-CAM" 
-              className="rounded-lg max-h-64 object-cover w-full border border-gray-200" 
+              src={
+                props.gradCam.startsWith("data:")
+                  ? props.gradCam
+                  : `data:image/png;base64,${props.gradCam}`
+              }
+              alt="Grad-CAM"
+              className="rounded-lg max-h-64 object-cover w-full border border-gray-200"
             />
           ) : (
             <div className="flex items-center justify-center h-48 bg-gray-50 border border-dashed rounded-lg">

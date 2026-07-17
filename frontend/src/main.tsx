@@ -11,7 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 import "./index.css";
 
-// Render the application with AuthProvider to provide authentication context
+// Main entry point of the React application, rendering the app into the root element
 ReactDom.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>

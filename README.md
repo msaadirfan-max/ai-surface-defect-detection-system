@@ -333,8 +333,8 @@ annotated segmentation masks and a different model architecture (YOLO, Mask R-CN
 ## Author
 
 **Hafiz Muhammad Saad Irfan**
-BS Software Engineering — Information Technology University, Lahore
-Internship Project · 2025
+BS Software Engineering — Information Technology University, Lahore —
+Internship Project — 2026
 
 [GitHub](https://github.com/msaadirfan-max) · [LinkedIn](https://linkedin.com/in/hafiz-muhammad-saad-irfan-69b7132a7)
 

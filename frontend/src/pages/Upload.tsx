@@ -4,9 +4,12 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/client";
 import ResultCard from "../components/ResultCard";
-import type { PredictExplainResponse, InspectionResponse } from "../types/index";
+import type {
+  PredictExplainResponse,
+  InspectionResponse,
+} from "../types/index";
 
-
+// Define the shape of the inspection result for type safety
 interface InspectionResult {
   status: "normal" | "defective";
   confidence: number;
@@ -14,6 +17,7 @@ interface InspectionResult {
   inferenceTimeMs: number;
 }
 
+// Main Upload component
 const Upload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -27,6 +31,7 @@ const Upload = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { logout, user } = useAuth();
 
+  // Handle file selection and reset previous results
   const handleFileChange = (selectedFile: File) => {
     if (preview) URL.revokeObjectURL(preview);
     setResult(null);
@@ -36,21 +41,21 @@ const Upload = () => {
     setPreview(URL.createObjectURL(selectedFile));
   };
 
-  // Issue 2 fix — fresh FormData built from file state, not passed as param
+  // Handle Grad-CAM request to the backend
   const handleGradCam = async (selectedFile: File) => {
     setGradCamLoading(true);
     try {
       const gradCamForm = new FormData();
       gradCamForm.append("file", selectedFile);
 
+      // Send the request to the backend for Grad-CAM analysis
       const response = await axios.post<PredictExplainResponse>(
-          "http://localhost:8000/predict-explain"
-        ,gradCamForm,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        "http://localhost:8000/predict-explain",
+        gradCamForm,
+        { headers: { "Content-Type": "multipart/form-data" } },
       );
 
-     console.log("Grad-CAM response:", response.data);
-     console.log("Grad-CAM base64 length:", response.data.gradcam_image.length);
+      // Set the Grad-CAM image returned from the backend
       setGradCam(response.data.gradcam_image);
     } catch (err) {
       console.error("Grad-CAM failed:", err);
@@ -60,6 +65,7 @@ const Upload = () => {
     }
   };
 
+  // Handle the main analysis request to the backend
   const handleAnalyze = async () => {
     if (!file) {
       setError("Please select a file first.");
@@ -74,22 +80,24 @@ const Upload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await apiClient.post<InspectionResponse>("/api/inspect", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await apiClient.post<InspectionResponse>(
+        "/api/inspect",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
 
       const inspectionData = response.data.inspection;
       setResult(inspectionData);
 
-      
       // Result card appears immediately, heatmap loads after
       handleGradCam(file);
-
     } catch (err: any) {
       setError(
         err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Analysis failed. Make sure the AI service is running."
+          err.response?.data?.message ||
+          "Analysis failed. Make sure the AI service is running.",
       );
     } finally {
       setLoading(false);
@@ -97,8 +105,14 @@ const Upload = () => {
   };
 
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
-  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
-  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); };
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
@@ -108,14 +122,15 @@ const Upload = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-
       {/* Navbar */}
       <nav className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
         <div>
           <p className="font-bold text-base tracking-wide">
             AI Surface Defect Detection
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">Quality Assurance Dashboard</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Quality Assurance Dashboard
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-300">
@@ -142,11 +157,11 @@ const Upload = () => {
       {/* Main content */}
       <main className="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
         <div className="flex flex-col md:flex-row gap-6 items-start">
-
           {/* LEFT — Upload panel */}
-          <div className={`w-full transition-all duration-300 ${result ? "md:w-1/2" : "md:w-2/3 mx-auto"}`}>
+          <div
+            className={`w-full transition-all duration-300 ${result ? "md:w-1/2" : "md:w-2/3 mx-auto"}`}
+          >
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-
               {/* Drop zone */}
               <div
                 onDragOver={onDragOver}
@@ -163,30 +178,50 @@ const Upload = () => {
                 <input
                   type="file"
                   ref={fileInputRef}
-                  onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])}
+                  onChange={(e) =>
+                    e.target.files?.[0] && handleFileChange(e.target.files[0])
+                  }
                   className="hidden"
                   accept=".jpg,.jpeg,.png"
                 />
 
                 {/* Upload icon */}
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${isDragging ? "bg-blue-100" : "bg-gray-100"}`}>
-                  <svg className={`w-7 h-7 ${isDragging ? "text-blue-500" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                <div
+                  className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${isDragging ? "bg-blue-100" : "bg-gray-100"}`}
+                >
+                  <svg
+                    className={`w-7 h-7 ${isDragging ? "text-blue-500" : "text-gray-400"}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                    />
                   </svg>
                 </div>
 
                 <p className="text-sm font-medium text-gray-700">
                   {isDragging ? "Release to upload" : "Drop image here"}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">or click to browse files</p>
-                <p className="text-xs text-gray-300 mt-3">JPG, JPEG, PNG · Max 5MB</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  or click to browse files
+                </p>
+                <p className="text-xs text-gray-300 mt-3">
+                  JPG, JPEG, PNG · Max 5MB
+                </p>
               </div>
 
               {/* Preview + button */}
               {preview && (
                 <div className="mt-5 space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-gray-700">Selected image</p>
+                    <p className="text-sm font-semibold text-gray-700">
+                      Selected image
+                    </p>
                     <button
                       onClick={() => {
                         URL.revokeObjectURL(preview);
@@ -217,9 +252,24 @@ const Upload = () => {
                   >
                     {loading ? (
                       <>
-                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
                         </svg>
                         Running model...
                       </>
@@ -236,7 +286,6 @@ const Upload = () => {
                   {error}
                 </div>
               )}
-
             </div>
           </div>
 
@@ -253,7 +302,6 @@ const Upload = () => {
               />
             </div>
           )}
-
         </div>
       </main>
     </div>
