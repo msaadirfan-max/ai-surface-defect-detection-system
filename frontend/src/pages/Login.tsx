@@ -18,8 +18,8 @@ const Login = () => {
     setError("");
     try {
       const response = await apiClient.post("/auth/login", { email, password });
-      const { token, id, name, email: userEmail, role } = response.data;
-      login(token, { id, username: name, email: userEmail, role });
+      const { token, name, email: userEmail, role } = response.data;
+      login(token, { name: name, email: userEmail, role });
       navigate("/upload", { replace: true });
     } catch (error: any) {
       const serverError =

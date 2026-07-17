@@ -19,6 +19,7 @@ import io
 import cv2
 import base64
 from PIL import Image as PILImage
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -107,7 +108,13 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def _status_from_confidence(pred_idx: int, confidence: float) -> str:
     """Map a predicted class index + confidence to a reported status,
