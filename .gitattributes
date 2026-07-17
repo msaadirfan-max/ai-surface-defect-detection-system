@@ -1,24 +1,13 @@
-# 1. Ignore build outputs and frontend compilation assets
-frontend/dist/**/* linguist-vendored
-frontend/build/**/* linguist-vendored
-frontend/node_modules/**/* linguist-vendored
+# 1. Completely ignore any Jupyter Notebook anywhere in the repository
+**/*.ipynb linguist-detectable=false
+**/*.ipynb linguist-vendored
 
-# 2. Ignore Node.js backend dependencies (if accidentally tracked)
-backend/node_modules/**/* linguist-vendored
+# 2. Ignore any build, node, or virtual env folders anywhere in the repository
+**/dist/**/* linguist-vendored
+**/build/**/* linguist-vendored
+**/node_modules/**/* linguist-vendored
+**/venv/**/* linguist-vendored
+**/.venv/**/* linguist-vendored
 
-# 3. Ignore Python virtual environments and cache directories
-ai-service/.venv/**/* linguist-vendored
-ai-service/venv/**/* linguist-vendored
-**/__pycache__/**/* linguist-vendored
-
-# 4. Prevent Jupyter Notebooks from dominating repository statistics
-ml/notebooks/*O.ipynb linguist-detectable=false
-
-# 5. Treat configuration and lock files as generated code so they are ignored
-package-lock.json linguist-generated
-yarn.lock linguist-generated
-pnpm-lock.yaml linguist-generated
-requirements.txt linguist-generated
-
-# 6. Exclude styling files if they over-represent CSS in stats
-frontend/src/index.css linguist-detectable=false
+# 3. Exclude CSS files completely to keep the focus on code
+**/*.css linguist-detectable=false
