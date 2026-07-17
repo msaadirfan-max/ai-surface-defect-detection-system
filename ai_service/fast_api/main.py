@@ -1,27 +1,41 @@
-
+import os
 import time
+import traceback
+
 import torch
 import torch.nn as nn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.concurrency import run_in_threadpool
 
 from model import build_model
 from preprocess import preprocess_image
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+import numpy as np
+import io
+
+import cv2
+import base64
+from PIL import Image as PILImage
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))            # Get the directory of the current file (main.py)
+MODEL_PATH = os.path.join(BASE_DIR, "best_model_mvtec.pth")
 
-MODEL_PATH = "best_model_mvtec.pth"   # path to your saved .pth file
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB, matches the frontend's own limit
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
-# Must match class_to_idx from your training notebook
-# Your training showed: {'Defective': 0, 'Normal': 1}
+# Must match class_to_idx from the training notebook: {'Defective': 0, 'Normal': 1}
 CLASS_MAP = {
     0: "defective",
     1: "normal"
 }
 
-CONFIDENCE_THRESHOLD = 0.5   # above this → use predicted class, below → "uncertain"
+CONFIDENCE_THRESHOLD = 0.5   # below this → status is reported as "uncertain"
 
 
 # ─────────────────────────────────────────────
@@ -50,6 +64,7 @@ async def lifespan(app: FastAPI):
 
     state.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {state.device}")
+    print(f"Looking for model at: {MODEL_PATH}")
 
     try:
         model = build_model(num_classes=2)
@@ -67,7 +82,10 @@ async def lifespan(app: FastAPI):
         print("Server will start but /predict will return 503 until model is loaded.")
         state.model_loaded = False
     except Exception as e:
+        # Print the full traceback — a bare str(e) here (e.g. on a state_dict
+        # key mismatch) hides exactly the info needed to debug a load failure.
         print(f"ERROR loading model: {e}")
+        traceback.print_exc()
         state.model_loaded = False
 
     print("=" * 50)
@@ -85,12 +103,136 @@ async def lifespan(app: FastAPI):
 # ─────────────────────────────────────────────
 
 app = FastAPI(
-    title="Tile Defect Detection API",
-    description="AI-powered quality inspection for ceramic/tile manufacturing",
+    title="Surface Defect Detection API",
+    description="AI-powered quality inspection for ceramic/surface manufacturing",
     version="1.0.0",
     lifespan=lifespan,
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # React dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+def _status_from_confidence(pred_idx: int, confidence: float) -> str:
+    """Map a predicted class index + confidence to a reported status,
+    applying CONFIDENCE_THRESHOLD so low-confidence predictions are
+    flagged as 'uncertain' instead of silently returned as-is."""
+    if confidence < CONFIDENCE_THRESHOLD:
+        return "uncertain"
+    return CLASS_MAP.get(pred_idx, "unknown")
+
+
+async def _read_validated_upload(file: UploadFile) -> bytes:
+    """Shared validation for both endpoints: content-type and size checks,
+    then read the bytes. Raises HTTPException on any violation."""
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid file type '{file.content_type}'. "
+                   f"Accepted: JPEG, PNG, WEBP."
+        )
+
+    try:
+        image_bytes = await file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not read file: {e}")
+
+    if len(image_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=422,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)} MB."
+        )
+
+    return image_bytes
+
+
+@app.post("/predict-explain")
+async def predict_explain(file: UploadFile = File(...)):
+    """
+    Same as /predict but also returns a base64-encoded Grad-CAM
+    overlay image showing which region influenced the prediction.
+
+    Returns:
+        status, confidence, inference_time_ms — same as /predict
+        gradcam_image — base64 PNG of the heatmap overlay
+    """
+    if not state.model_loaded:
+        raise HTTPException(status_code=503, detail="Model not loaded.")
+
+    image_bytes = await _read_validated_upload(file)
+
+    try:
+        # Decode image
+        np_array = np.frombuffer(image_bytes, dtype=np.uint8)
+        img_bgr  = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+        if img_bgr is None:
+            raise ValueError("Could not decode image.")
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+
+        # Preprocess for model — same pipeline as training test_transform
+        pil_image    = PILImage.fromarray(img_rgb)
+        input_tensor = preprocess_image(image_bytes).to(state.device)
+
+        # Float32 image in range [0,1] for the overlay — must match input size
+        img_resized = np.array(pil_image.resize((384, 384))) / 255.0
+
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    try:
+        t_start = time.time()
+
+        # Standard prediction — offloaded to a thread so a slow inference
+        # call doesn't block the event loop (and other requests, like
+        # /health, from being served concurrently)
+        def _forward():
+            with torch.no_grad():
+                logits = state.model(input_tensor)      # Converting preprocessed image
+                probs  = torch.softmax(logits, dim=1)   # Making it range btw 0.0 and 1.0
+                pred_idx = torch.argmax(probs, dim=1).item()   # Selecting with max value
+                confidence = probs[0][pred_idx].item()    # Convert into standard python float number 
+            return pred_idx, confidence
+
+        pred_idx, confidence = await run_in_threadpool(_forward)
+
+        inference_ms = (time.time() - t_start) * 1000
+
+        # Grad-CAM — target layer4, explain the predicted class
+        target_layers = [state.model.layer4[-1]]
+
+        
+        def _gradcam():
+            with GradCAM(model=state.model, target_layers=target_layers) as cam:
+                grayscale_cam = cam(input_tensor=input_tensor, targets=None)
+                return grayscale_cam[0]  # (384, 384)
+
+        grayscale_cam = await run_in_threadpool(_gradcam)
+
+        # Overlay heatmap on original image as till now it is invisible matrix
+        overlay = show_cam_on_image(
+            img_resized.astype(np.float32),
+            grayscale_cam,
+            use_rgb=True
+        )
+
+        # Encode overlay as base64 PNG to send in JSON response
+        overlay_pil = PILImage.fromarray(overlay)
+        buffer      = io.BytesIO()           # Creates a temporary memory virtual file
+        overlay_pil.save(buffer, format="PNG")  # Save and convert to img and save in virtual memory
+        gradcam_b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inference error: {e}")
+
+    return JSONResponse({
+        "status"           : _status_from_confidence(pred_idx, confidence),
+        "confidence"       : round(confidence, 4),
+        "inference_time_ms": round(inference_ms, 2),
+        "gradcam_image"    : gradcam_b64,   # base64 PNG, display with <img src="data:image/png;base64,...">
+    })
 
 # ─────────────────────────────────────────────
 # HTML UI — served at GET /
@@ -102,7 +244,7 @@ HTML_UI = r"""
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tile QA Inspector</title>
+  <title>Surface QA Inspector</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -338,6 +480,63 @@ HTML_UI = r"""
       display: none;
     }
 
+    /* ── Grad-CAM explanation ── */
+    .gradcam-section {
+      display: none;
+      margin-top: 1.5rem;
+      border-top: 1px solid #2d3148;
+      padding-top: 1.25rem;
+    }
+    .gradcam-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: .75rem;
+    }
+    .gradcam-title {
+      font-size: 0.85rem; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .gradcam-hint {
+      font-size: 0.75rem; color: #64748b;
+    }
+    .gradcam-images {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+    .gradcam-pane {
+      background: #111827;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .gradcam-pane img {
+      width: 100%;
+      display: block;
+      max-height: 260px;
+      object-fit: contain;
+      background: #0b0d14;
+    }
+    .gradcam-pane-label {
+      font-size: 0.7rem; color: #64748b;
+      text-transform: uppercase; letter-spacing: .04em;
+      padding: .4rem .6rem;
+      border-top: 1px solid #2d3148;
+    }
+    .gradcam-note {
+      font-size: 0.78rem; color: #94a3b8;
+      margin-top: .75rem;
+      line-height: 1.4;
+    }
+    .gradcam-loading {
+      display: none;
+      font-size: 0.78rem; color: #64748b;
+      margin-top: .75rem;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      .gradcam-images { grid-template-columns: 1fr; }
+    }
+
     /* ── Footer ── */
     .footer {
       margin-top: 2rem;
@@ -351,7 +550,7 @@ HTML_UI = r"""
 <body>
 
 <div class="header">
-  <h1>🔬 Tile QA Inspector</h1>
+  <h1> Surface Quality Assurance Inspector</h1>
   <p>
     <span class="status-dot" id="statusDot"></span>
     <span id="statusText">Checking service...</span>
@@ -413,6 +612,29 @@ HTML_UI = r"""
         <div class="meta-val" id="metaFile">—</div>
       </div>
     </div>
+
+    <!-- Grad-CAM explanation -->
+    <div class="gradcam-loading" id="gradcamLoading">Generating Grad-CAM explanation…</div>
+    <div class="gradcam-section" id="gradcamSection">
+      <div class="gradcam-header">
+        <span class="gradcam-title">Why the model decided this</span>
+        <span class="gradcam-hint">Grad-CAM</span>
+      </div>
+      <div class="gradcam-images">
+        <div class="gradcam-pane">
+          <img id="gradcamOriginal" src="" alt="Original tile">
+          <div class="gradcam-pane-label">Original</div>
+        </div>
+        <div class="gradcam-pane">
+          <img id="gradcamHeatmap" src="" alt="Grad-CAM heatmap">
+          <div class="gradcam-pane-label">Model attention</div>
+        </div>
+      </div>
+      <div class="gradcam-note">
+        Warmer regions (red/yellow) are where the model focused most when making its prediction.
+        Use this to sanity-check that it's actually looking at the surface, not the background.
+      </div>
+    </div>
   </div>
 
   <!-- History -->
@@ -429,7 +651,7 @@ HTML_UI = r"""
 </div>
 
 <div class="footer">
-  AI Quality Assurance System · ResNet-50 Transfer Learning ·
+  Surface Quality Assurance System · ResNet-50 Transfer Learning ·
   <a href="/docs" target="_blank">API Docs</a>
 </div>
 
@@ -450,6 +672,10 @@ HTML_UI = r"""
   const errorBox    = document.getElementById('errorBox');
   const resultCard  = document.getElementById('resultCard');
   const historyList = document.getElementById('historyList');
+  const gradcamSection = document.getElementById('gradcamSection');
+  const gradcamLoading = document.getElementById('gradcamLoading');
+  const gradcamOriginal = document.getElementById('gradcamOriginal');
+  const gradcamHeatmap  = document.getElementById('gradcamHeatmap');
 
   // ── Health check ───────────────────────────────────────
   async function checkHealth() {
@@ -522,12 +748,16 @@ HTML_UI = r"""
     analyseBtn.disabled     = true;
     hideError();
     hideResult();
+    gradcamSection.style.display = 'none';
+    gradcamLoading.style.display = 'block';
 
     const formData = new FormData();
     formData.append('file', selectedFile);
 
     try {
-      const res  = await fetch('/predict', { method: 'POST', body: formData });
+      // /predict-explain returns everything /predict does, plus a
+      // base64 Grad-CAM overlay showing where the model looked
+      const res  = await fetch('/predict-explain', { method: 'POST', body: formData });
       const data = await res.json();
 
       if (!res.ok) {
@@ -536,6 +766,7 @@ HTML_UI = r"""
       }
 
       showResult(data, selectedFile);
+      showGradcam(data, previewImg.src);
       addHistory(data, selectedFile, previewImg.src);
 
     } catch (err) {
@@ -545,15 +776,27 @@ HTML_UI = r"""
       spinner.style.display = 'none';
       analyseBtn.disabled   = false;
       btnText.textContent   = 'Analyse Again';
+      gradcamLoading.style.display = 'none';
     }
   });
+
+  // ── Grad-CAM display ───────────────────────────────────
+  function showGradcam(data, originalSrc) {
+    if (!data.gradcam_image) {
+      gradcamSection.style.display = 'none';
+      return;
+    }
+    gradcamOriginal.src = originalSrc;
+    gradcamHeatmap.src  = 'data:image/png;base64,' + data.gradcam_image;
+    gradcamSection.style.display = 'block';
+  }
 
   // ── Show result ────────────────────────────────────────
   function showResult(data, file) {
     const card    = resultCard;
     const pct     = Math.round(data.confidence * 100);
     const isNorm  = data.status === 'normal';
-    const isUncertain = pct < 60;
+    const isUncertain = data.status === 'uncertain';
 
     card.className = 'result ' + (isUncertain ? 'uncertain' : isNorm ? 'pass' : 'fail');
 
@@ -578,8 +821,8 @@ HTML_UI = r"""
   // ── History ────────────────────────────────────────────
   function addHistory(data, file, thumbSrc) {
     const pct  = Math.round(data.confidence * 100);
-    const cls  = pct < 60 ? 'uncertain' : data.status === 'normal' ? 'pass' : 'fail';
-    const label = pct < 60 ? 'Uncertain' : data.status === 'normal' ? 'PASS' : 'FAIL';
+    const cls  = data.status === 'uncertain' ? 'uncertain' : data.status === 'normal' ? 'pass' : 'fail';
+    const label = data.status === 'uncertain' ? 'Uncertain' : data.status === 'normal' ? 'PASS' : 'FAIL';
 
     history.unshift({ data, file, thumbSrc, cls, label, pct });
     renderHistory();
@@ -611,7 +854,10 @@ HTML_UI = r"""
     errorBox.style.display  = 'block';
   }
   function hideError()  { errorBox.style.display  = 'none'; }
-  function hideResult() { resultCard.style.display = 'none'; }
+  function hideResult() {
+    resultCard.style.display = 'none';
+    gradcamSection.style.display = 'none';
+  }
 
   function resetUI() {
     selectedFile = null;
@@ -669,20 +915,8 @@ async def predict(file: UploadFile = File(...)):
             detail="Model not loaded. Check server logs."
         )
 
-    # ── Validate file type ──
-    allowed_types = {"image/jpeg", "image/png", "image/webp"}
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Invalid file type '{file.content_type}'. "
-                   f"Accepted: JPEG, PNG, WEBP."
-        )
-
-    # ── Read file bytes ──
-    try:
-        image_bytes = await file.read()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not read file: {e}")
+    # ── Validate + read file ──
+    image_bytes = await _read_validated_upload(file)
 
     # ── Preprocess ──
     try:
@@ -697,11 +931,17 @@ async def predict(file: UploadFile = File(...)):
     try:
         t_start = time.time()
 
-        with torch.no_grad():
-            logits = state.model(tensor)                        # raw output [1, 2]
-            probs  = torch.softmax(logits, dim=1)               # probabilities [1, 2]
-            pred_idx = torch.argmax(probs, dim=1).item()        # 0 or 1
-            confidence = probs[0][pred_idx].item()              # float 0–1
+        # Offloaded to a thread so a slow inference call doesn't block the
+        # event loop and stall other requests (e.g. /health) in the meantime
+        def _forward():
+            with torch.no_grad():
+                logits = state.model(tensor)                        # raw output [1, 2]
+                probs  = torch.softmax(logits, dim=1)               # probabilities [1, 2]
+                pred_idx = torch.argmax(probs, dim=1).item()        # 0 or 1
+                confidence = probs[0][pred_idx].item()              # float 0–1
+            return pred_idx, confidence
+
+        pred_idx, confidence = await run_in_threadpool(_forward)
 
         inference_ms = (time.time() - t_start) * 1000
 
@@ -709,7 +949,7 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Inference error: {e}")
 
     # ── Build response ──
-    status = CLASS_MAP.get(pred_idx, "unknown")
+    status = _status_from_confidence(pred_idx, confidence)
 
     return JSONResponse({
         "status":           status,

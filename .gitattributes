@@ -1,0 +1,13 @@
+# 1. Completely ignore any Jupyter Notebook anywhere in the repository
+**/*.ipynb linguist-detectable=false
+**/*.ipynb linguist-vendored
+
+# 2. Ignore any build, node, or virtual env folders anywhere in the repository
+**/dist/**/* linguist-vendored
+**/build/**/* linguist-vendored
+**/node_modules/**/* linguist-vendored
+**/venv/**/* linguist-vendored
+**/.venv/**/* linguist-vendored
+
+# 3. Exclude CSS files completely to keep the focus on code
+**/*.css linguist-detectable=false
