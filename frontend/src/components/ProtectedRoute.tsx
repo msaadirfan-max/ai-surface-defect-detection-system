@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 }
 
 
+// ProtectedRoute component that checks authentication and authorization before rendering children
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin }) => {
     const { isAuthenticated, isAdmin } = useAuth();
 

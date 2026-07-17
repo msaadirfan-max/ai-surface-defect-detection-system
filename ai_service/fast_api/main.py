@@ -1,7 +1,8 @@
+
+## FastAPI server for AI-powered surface defect detection
 import os
 import time
 import traceback
-
 import torch
 import torch.nn as nn
 from contextlib import asynccontextmanager
