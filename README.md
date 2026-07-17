@@ -1,42 +1,50 @@
-# AI-Powered Quality Assurance System
-### Surface Defect Detection for Ceramic Tile Manufacturing
+# AI-Powered Surface Defect Detection System
 
-A machine learning proof-of-concept built during a 6-week software engineering internship. The system automates visual quality inspection on a ceramic tile production line using transfer learning, replacing error-prone manual inspection with a consistent, auditable AI pipeline.
+> Automated visual quality inspection using transfer learning — replacing manual surface
+> inspection with a consistent, auditable, and explainable AI pipeline.
 
-A factory worker inspects thousands of tiles surface per shift. Accuracy degrades with fatigue, results vary between inspectors, and there is no digital record of decisions made. This system addresses all three problems.
+---
+
+## Overview
+
+A full-stack machine learning system built during a 6-week software engineering internship.
+The system detects surface defects across multiple material types using a fine-tuned ResNet-50
+model, served through a microservices architecture with real-time Grad-CAM explainability.
+
+A quality inspector examines hundreds of surface samples per shift. Accuracy degrades with
+fatigue, results vary between inspectors, and there is no digital record of decisions made.
+This system addresses all three problems.
+
+**Supported surface types:** Ceramic tile · Carpet · Leather · Wood
 
 ---
 
 ## Demo
 
-> Upload a tile image → get an instant PASS / FAIL verdict with confidence score
-
-<!--![System Architecture](docs/architecture.png)
-<!-- Replace with actual screenshot once frontend is connected -->
+> Upload a surface image → instant PASS / FAIL verdict → confidence score → Grad-CAM heatmap
 
 ---
 
 ## System Architecture
-
-```
 ┌─────────────────┐     POST /api/inspect      ┌──────────────────────┐
 │  React Web App  │ ─────────────────────────► │  Node.js / Express   │
-│  React Native   │ ◄───────────────────────── │  (Traffic Cop)       │
+│  TypeScript     │ ◄───────────────────────── │  Auth · Logging      │
 └─────────────────┘     JSON result            └──────────┬───────────┘
-                                                          │ POST /predict
-                                                          ▼
-                                               ┌──────────────────────┐
-                                               │  FastAPI Microservice│
-                                               │  ResNet-50 + PyTorch │
-                                               └──────────┬───────────┘
-                                                          │
-                                               ┌──────────▼───────────┐
-                                               │      MongoDB         │
-                                               │  Inspection Logs     │
-                                               └──────────────────────┘
-```
+│ POST /predict
+▼
+┌──────────────────────┐
+│  FastAPI Microservice│
+│  ResNet-50 + PyTorch │
+│  Grad-CAM Explainer  │
+└──────────┬───────────┘
+│
+┌──────────▼───────────┐
+│    MongoDB Atlas      │
+│  Inspection Logs     │
+└──────────────────────┘
 
-The Node.js backend acts as the sole entry point — it handles authentication, rate limiting, and image forwarding. The Python AI service is never directly exposed to the internet.
+The Node.js backend acts as the sole entry point — it handles authentication, rate limiting,
+and image forwarding. The FastAPI AI service is never directly exposed to the browser.
 
 ---
 
@@ -44,11 +52,11 @@ The Node.js backend acts as the sole entry point — it handles authentication, 
 
 | Layer | Technology |
 |---|---|
-| ML / AI Core | Python, PyTorch, OpenCV, Torchvision |
-| AI Microservice | FastAPI, Uvicorn |
-| Backend | Node.js, Express, MongoDB (Mongoose) |
-| Web Frontend | React (Vite) |
-| Mobile | React Native (Expo) |
+| ML / AI Core | Python · PyTorch · OpenCV · Torchvision |
+| AI Microservice | FastAPI · Uvicorn |
+| Backend | Node.js · Express · MongoDB Atlas · Mongoose |
+| Frontend | React · TypeScript · Vite · Tailwind CSS |
+| Auth | JWT · bcryptjs |
 | Training Environment | Google Colab (NVIDIA T4 GPU) |
 
 ---
@@ -57,7 +65,8 @@ The Node.js backend acts as the sole entry point — it handles authentication, 
 
 ### Architecture
 
-ResNet-50 pretrained on ImageNet, fine-tuned for binary surface defect classification.
+ResNet-50 pretrained on ImageNet, fine-tuned for binary surface defect classification
+with Grad-CAM explainability.
 
 | Property | Value |
 |---|---|
@@ -67,35 +76,50 @@ ResNet-50 pretrained on ImageNet, fine-tuned for binary surface defect classific
 | Input resolution | 384 × 384 RGB |
 | Output | `normal` / `defective` + confidence score |
 | Classification head | `Dropout(0.4)` → `Linear(2048, 2)` |
+| Explainability | Grad-CAM heatmap overlay |
 
 ### Why ResNet-50
 
-Early layers of ResNet already encode edges, textures, and surface patterns from ImageNet's 1.2 million images. Fine-tuning only the later layers lets the model adapt these general features to the specific visual vocabulary of tile defects — cracks, oil contamination, rough texture, glue — without relearning from scratch on a small dataset.
+Early layers of ResNet already encode edges, textures, and surface patterns from ImageNet's
+1.2 million images. Fine-tuning only the later layers lets the model adapt these general
+features to the specific visual vocabulary of surface defects — cracks, oil contamination,
+rough texture, glue — without relearning from scratch on a small dataset.
 
 ### Training Strategy
 
-**Class imbalance** is the central challenge. The dataset has roughly 4× more Normal images than Defective. Three mechanisms address this together:
+**Class imbalance** is the central challenge. The dataset has roughly 4× more Normal images
+than Defective. Three mechanisms address this together:
 
-- `WeightedRandomSampler` — each training batch is balanced to approximately 50/50 Normal/Defective regardless of folder counts
-- `CrossEntropyLoss(weight=...)` — higher loss penalty for misclassifying a Defective tile than a Normal one
-- Per-class augmentation — heavy rotation, affine shifts, and colour jitter on Defective images only; mild flips on Normal images
+- `WeightedRandomSampler` — each training batch is balanced to approximately 50/50
+  Normal/Defective regardless of folder counts
+- `CrossEntropyLoss(weight=...)` — higher loss penalty for misclassifying a Defective
+  surface than a Normal one
+- Per-class augmentation — heavy rotation, affine shifts, and colour jitter on Defective
+  images only; mild flips on Normal images
 
-**Two loss functions** are used deliberately. Weighted loss during training pushes the model to treat missed defects as costly. Unweighted loss during validation gives an honest, comparable number for early stopping — using the weighted loss for validation inflated val_loss and caused training to stop too early.
+**Two loss functions** are used deliberately. Weighted loss during training pushes the model
+to treat missed defects as costly. Unweighted loss during validation gives an honest,
+comparable number for early stopping — using the weighted loss for validation inflated
+val_loss and caused training to stop too early.
 
 ### Dataset
 
-[MVTec Anomaly Detection Dataset](https://datasetninja.com/mvtec-ad) — flat-surface texture categories only.
+[MVTec Anomaly Detection Dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)
+— flat-surface texture categories only.
 
-| Category | Included | Reason |
+| Category | Included | Defect Types |
 |---|---|---|
-| `tile` | ✅ | Primary domain — geometric patterned tiles |
-| `carpet` | ✅ | Flat texture, same imaging geometry |
-| `leather` | ✅ | Flat texture, crack defects transfer well |
-| `wood` | ✅ | Flat texture, surface discontinuity defects |
+| `tile` | ✅ | crack, glue strip, gray stroke, oil, rough |
+| `carpet` | ✅ | color, cut, hole, metal contamination, thread |
+| `leather` | ✅ | color, cut, fold, glue, poke |
+| `wood` | ✅ | color, combined, hole, liquid, scratch |
 | `grid` | ❌ | Grayscale — produces flat R=G=B tensors that destabilise ResNet colour features |
 | All 3D objects | ❌ | Screws, pills, cables — defect morphology irrelevant to surface inspection |
 
-The 3D object categories (hazelnut, toothbrush, transistor, etc.) were excluded deliberately. A bent toothbrush bristle and a ceramic surface crack share no learnable visual features. Including them would force the model to memorise unrelated patterns at the cost of tile-specific accuracy.
+The 3D object categories (hazelnut, toothbrush, transistor, etc.) were excluded deliberately.
+A bent toothbrush bristle and a ceramic surface crack share no learnable visual features.
+Including them would force the model to memorise unrelated patterns at the cost of
+surface-specific accuracy.
 
 **Split:** 70% of defective images → training, 30% → test. All normal images split 80/20.
 
@@ -106,37 +130,66 @@ The 3D object categories (hazelnut, toothbrush, transistor, etc.) were excluded 
 
 ### Key Metric
 
-**Defective recall** — of all actually defective tiles in the test set, what fraction did the model flag?
+**Defective recall** — of all actually defective surfaces in the test set, what fraction
+did the model flag?
 
-Overall accuracy is a misleading metric here. A model that predicts Normal for every image achieves ~70% accuracy on this test set while catching zero defects. Defective recall directly measures what matters in manufacturing: are bad tiles being caught before they reach a customer?
+Overall accuracy is a misleading metric here. A model that predicts Normal for every image
+achieves ~70% accuracy on this test set while catching zero defects. Defective recall
+directly measures what matters in manufacturing: are bad surfaces being caught before they
+reach a customer?
+
+---
+
+## Features
+
+### Regular User
+- Upload surface images via drag-and-drop or file picker
+- Instant PASS / FAIL verdict with confidence score
+- Grad-CAM heatmap showing which surface regions triggered the prediction
+- Personal inspection history with pagination and status filtering
+
+### Admin
+- System-wide analytics dashboard
+- Defect rate trends over the last 30 days
+- All users' inspection history
+- User management and role assignment
 
 ---
 
 ## Project Structure
-
-```
-ai-qa-system/
+ai-surface-defect-detection-system/
 │
 ├── ml/                          # Training pipeline
 │   ├── notebooks/
 │   │   └── training.ipynb       # Full training notebook (Colab)
-│   ├── src/
-│   │   ├── restructure_mvtec.py # Converts MVTec folder structure → Normal/Defective
-│   │   └── process_dataset.py   # Batch resize all images to 384×384
-│   └── requirements.txt
+│   └── src/
+│       ├── restructure_mvtec.py # Converts MVTec folder structure → Normal/Defective
+│       └── process_dataset.py   # Batch resize all images to 384×384
 │
 ├── ai-service/                  # FastAPI inference microservice
-│   ├── main.py                  # App, routes, startup model loading, web UI
+│   ├── fast_api/
+│   │   └── main.py              # Routes, startup, model loading
 │   ├── model.py                 # ResNet-50 architecture (matches training exactly)
 │   ├── preprocess.py            # Image bytes → normalised tensor
 │   └── requirements.txt
 │
-├── backend/                     # Node.js / Express  [in progress]
-├── frontend/                    # React web dashboard [in progress]
-├── mobile/                      # React Native (Expo) [in progress]
+├── backend/                     # Node.js / Express API
+│   ├── config/db.js             # MongoDB Atlas connection
+│   ├── models/                  # Mongoose schemas (User, Inspection)
+│   ├── middleware/              # JWT auth, role guard, multer upload, error handler
+│   ├── routes/                  # auth, inspect, inspections, admin
+│   ├── services/aiService.js    # FastAPI bridge
+│   └── server.js
+│
+├── frontend/                    # React · TypeScript · Tailwind CSS
+│   └── src/
+│       ├── api/                 # Axios client with interceptors
+│       ├── context/             # Auth context (token, user, login, logout)
+│       ├── components/          # ProtectedRoute, ResultCard, Navbar
+│       ├── pages/               # Login, Register, Upload, History, AdminDashboard
+│       └── types/               # Shared TypeScript interfaces
 │
 └── README.md
-```
 
 ---
 
@@ -146,106 +199,127 @@ ai-qa-system/
 
 - Python 3.10+
 - Node.js 18+
-- MongoDB (local or Atlas)
+- MongoDB Atlas account
 - NVIDIA GPU recommended for training (Google Colab T4 works)
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/msaadirfan-max/ai-surface-defect--detection-system.git
-cd ai-surface-defect--detection-system
+git clone https://github.com/msaadirfan-max/ai-surface-defect-detection-system.git
+cd ai-surface-defect-detection-system
 ```
 
 ### 2. Download the trained model
 
-The model weights are not stored in this repository (100 MB+ file). Download `best_model_mvtec.pth` from the [latest release](https://github.com/msaadirfan-max/ai-surface-defect--detection-system/releases) and place it in `ai-service/`.
+The model weights are not stored in this repository (100 MB+ file). Download
+`best_model_mvtec.pth` from the
+[latest release](https://github.com/msaadirfan-max/ai-surface-defect-detection-system/releases)
+and place it in `ai-service/`.
 
-### 3. Run the AI microservice
+### 3. Environment variables
+
+Create a `.env` file inside `backend/`:
+
+```env
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/ai-qa-system
+JWT_SECRET=your_secret_key_here
+FASTAPI_URL=http://localhost:8000
+PORT=5000
+```
+
+### 4. Run the AI microservice
 
 ```bash
 cd ai-service
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv venv
+uv run uvicorn fast_api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open `http://localhost:8000` for the built-in inspection UI.
 Open `http://localhost:8000/docs` for the auto-generated API reference.
 
-### 4. API endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Service status and model load confirmation |
-| `POST` | `/predict` | Upload an image, receive defect prediction |
-| `GET` | `/` | Built-in drag-and-drop web UI |
-
-**Example response from `POST /predict`:**
-```json
-{
-  "status": "defective",
-  "confidence": 0.9731,
-  "inference_time_ms": 48.3,
-  "predicted_index": 0,
-  "class_map": {"0": "defective", "1": "normal"}
-}
-```
-
-### 5. Dataset setup (for retraining)
-
-Download the MVTec AD dataset from [mvtec.com](https://www.mvtec.com/company/research/datasets/mvtec-ad). Then run the preparation scripts in order:
+### 5. Run the backend
 
 ```bash
-cd ml/src
-
-# Step 1 — restructure MVTec folders into Normal/Defective splits
-python restructure_mvtec.py
-
-# Step 2 — resize all images to 384×384
-python process_dataset.py
-
-# Step 3 — zip and upload to Google Drive, then open training.ipynb in Colab
+cd backend
+npm install
+npm run dev
 ```
+
+### 6. Run the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`
+
+### 7. API endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/register` | None | Create account |
+| `POST` | `/auth/login` | None | Login, returns JWT |
+| `POST` | `/api/inspect` | User | Upload image, get prediction |
+| `POST` | `/api/inspect/explain` | User | Upload image, get Grad-CAM heatmap |
+| `GET` | `/api/inspections` | User | Paginated personal inspection history |
+| `GET` | `/api/inspections/:id` | User | Single inspection record |
+| `GET` | `/api/admin/stats` | Admin | System-wide analytics |
+| `GET` | `/api/admin/inspections` | Admin | All users' inspections |
+| `GET` | `/api/admin/users` | Admin | All user accounts |
+| `PATCH` | `/api/admin/users/:id/role` | Admin | Change user role |
 
 ---
 
 ## Inference Pipeline
 
-When an image reaches `POST /predict`, this sequence runs:
+When an image reaches `POST /api/inspect`, this sequence runs:
 
-1. File type validation — only JPEG, PNG, WEBP accepted
-2. Bytes decoded to OpenCV BGR image
-3. BGR converted to RGB — OpenCV reads BGR; PyTorch expects RGB
-4. Resized to 384 × 384 using `INTER_AREA` interpolation
-5. Converted to tensor, normalised with ImageNet mean and std
-6. Batch dimension added: `[3, 384, 384]` → `[1, 3, 384, 384]`
-7. Forward pass through ResNet-50 under `torch.no_grad()`
-8. Softmax converts logits to probabilities
-9. `argmax` selects predicted class, confidence extracted
-10. JSON response returned to Node.js backend
+1. JWT verified by Node.js auth middleware
+2. Image saved to disk via multer, forwarded to FastAPI as multipart form data
+3. File type validation — JPEG, PNG only
+4. Bytes decoded to OpenCV BGR image
+5. BGR converted to RGB — OpenCV reads BGR; PyTorch expects RGB
+6. Resized to 384 × 384 using `INTER_AREA` interpolation
+7. Converted to tensor, normalised with ImageNet mean and std
+8. Batch dimension added: `[3, 384, 384]` → `[1, 3, 384, 384]`
+9. Forward pass through ResNet-50 under `torch.no_grad()`
+10. Softmax converts logits to probabilities, argmax selects predicted class
+11. Result saved to MongoDB Atlas, JSON returned to frontend
 
-Steps 3–6 must exactly mirror the test transforms used during training. Any mismatch produces wrong predictions without any error — the model receives valid-looking input and outputs confidently incorrect results.
+Steps 5–8 must exactly mirror the test transforms used during training. Any mismatch
+produces wrong predictions without any error.
 
 ---
 
 ## Roadmap
 
 - [x] ML training pipeline (ResNet-50, MVTec dataset)
-- [x] FastAPI inference microservice with built-in web UI
-- [ ] Node.js backend — image forwarding, MongoDB logging, auth
-- [ ] React web dashboard — inspection history, stats, drag-and-drop upload
-- [ ] React Native mobile app — camera capture and real-time result display
-- [ ] Docker Compose — single command local environment setup
-- [ ] Model retraining on factory-specific tile images
+- [x] FastAPI inference microservice with Grad-CAM explainability
+- [x] Node.js backend — image forwarding, MongoDB logging, JWT auth
+- [x] React web dashboard — drag-and-drop upload, real-time results, Grad-CAM display
+- [x] Inspection history with pagination and filtering
+- [x] Admin dashboard — analytics, user management, role assignment
+- [ ] Docker Compose — single command environment setup
+- [ ] React Native mobile app — camera capture and real-time results
+- [ ] Model retraining pipeline on domain-specific images
 
 ---
 
 ## Known Limitations
 
-**Dataset variability.** MVTec tile images were captured under controlled lab conditions with consistent lighting and camera angle. Real factory environments introduce variable lighting, slight camera tilt, and tile positioning differences that this model has not seen.
+**Dataset variability.** MVTec images were captured under controlled lab conditions with
+consistent lighting and camera angle. Real environments introduce variable lighting,
+slight camera tilt, and positioning differences the model has not seen.
 
-**Domain specificity.** The model is calibrated to the visual patterns of MVTec's tile category. New tile product lines or significantly different surface textures require a retraining cycle on representative samples.
+**Domain specificity.** The model is calibrated to MVTec's visual patterns. New material
+types or significantly different surface textures require a retraining cycle on
+representative samples.
 
-**No defect localisation.** The model returns a binary Normal/Defective label with a confidence score. It does not indicate where on the tile the defect is located. Bounding-box localisation would require either pixel-level annotations or an object detection approach (YOLO, Faster R-CNN).
+**No pixel-level localisation.** Grad-CAM shows which regions the model attended to but
+does not produce precise defect bounding boxes. Pixel-level localisation would require
+annotated segmentation masks and a different model architecture (YOLO, Mask R-CNN).
 
 ---
 
@@ -260,10 +334,11 @@ Steps 3–6 must exactly mirror the test transforms used during training. Any mi
 
 **Hafiz Muhammad Saad Irfan**
 BS Software Engineering — Information Technology University, Lahore
-Internship Project · 2024
+Internship Project · 2025
 
 [GitHub](https://github.com/msaadirfan-max) · [LinkedIn](https://linkedin.com/in/hafiz-muhammad-saad-irfan-69b7132a7)
 
 ---
 
-*Built with PyTorch, FastAPI, and the MVTec AD dataset. Model weights available in [Releases](https://github.com/msaadirfan-max/ai-qa-system/releases).*
+*Built with PyTorch, FastAPI, Node.js, and React.
+Model weights available in [Releases](https://github.com/msaadirfan-max/ai-surface-defect-detection-system/releases).*
