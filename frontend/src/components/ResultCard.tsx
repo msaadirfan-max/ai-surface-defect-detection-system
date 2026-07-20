@@ -57,7 +57,7 @@ const ResultCard: React.FC<ResultCardProps> = (props) => {
         {/* Right Col: Heatmap Slot */}
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
-            Grad-CAM Heatmap
+            Prediction Heatmap
           </h4>
 
           {props.gradCamLoading ? (

@@ -12,7 +12,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const {login} = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -21,12 +21,16 @@ const Register = () => {
     setError("");
     try {
       if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+        setError("Passwords do not match.");
+        return;
       }
       setLoading(true);
-      const response = await apiClient.post("/auth/register", { name, email, password });
-      const { token, user:registeredUser } = response.data;
+      const response = await apiClient.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+      const { token, user: registeredUser } = response.data;
       login(token, registeredUser);
       setSuccess(true);
       setTimeout(() => {
@@ -39,26 +43,29 @@ const Register = () => {
     } finally {
       setLoading(false);
     }
-    
   }
-  
-return (
+
+  return (
     <>
       <nav className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
-        <span className="font-bold text-lg tracking-wide">
-          AI Surface Defect Detection
-        </span>
-        <span className="text-sm text-gray-400">Quality Assurance System</span>
+        <div className="flex flex-col">
+          <span className="font-bold text-lg tracking-wide">
+            AI Surface Defect Detection
+          </span>
+          <span className="text-xs text-gray-400">
+            Quality Assurance Dashboard
+          </span>
+        </div>
       </nav>
 
       <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
         <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
           <div className="mb-8 text-center">
-            <h1 className="text-2xl font-bold text-gray-800">Create an account</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Create an account
+            </h1>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Sign up to get started
-            </p>
+            <p className="mt-1 text-sm text-gray-500">Sign up to get started</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -170,4 +177,3 @@ return (
 };
 
 export default Register;
-

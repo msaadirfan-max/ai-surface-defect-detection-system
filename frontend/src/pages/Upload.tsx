@@ -1,9 +1,9 @@
 // Upload.tsx
 import React, { useState, useRef } from "react";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/client";
 import ResultCard from "../components/ResultCard";
+import Navbar from "../components/Navbar";
 import type {
   PredictExplainResponse,
   InspectionResponse,
@@ -29,7 +29,7 @@ const Upload = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { logout, user } = useAuth();
+  
 
   // Handle file selection and reset previous results
   const handleFileChange = (selectedFile: File) => {
@@ -122,30 +122,7 @@ const Upload = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Navbar */}
-      <nav className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
-        <div>
-          <p className="font-bold text-base tracking-wide">
-            AI Surface Defect Detection
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Quality Assurance Dashboard
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-300">
-            {/* Issue 4 fix — user.name not user.username */}
-            Welcome, {user?.name ?? "Operator"}
-          </span>
-          <button
-            onClick={logout}
-            className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition duration-200"
-          >
-            Sign Out
-          </button>
-        </div>
-      </nav>
-
+      <Navbar />
       {/* Page heading */}
       <div className="max-w-6xl mx-auto w-full px-4 pt-8 pb-2">
         <h1 className="text-2xl font-bold text-gray-800">Inspection Console</h1>
