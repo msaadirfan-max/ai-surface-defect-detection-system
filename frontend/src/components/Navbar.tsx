@@ -49,7 +49,7 @@ const Navbar = () => {
                 : "text-gray-400 hover:text-gray-200 transition"
             }
           >
-            Admin Panel
+            Admin
           </NavLink>
         )}
       </div>

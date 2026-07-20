@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type {ChangeEvent} from "react";
 import Navbar from "../components/Navbar";
 import InspectionTable from "../components/InspectionTable";
 import apiClient from "../api/client";
@@ -42,7 +43,7 @@ const History = () => {
   }, [currentPage, statusFilter]);
 
   // Handler for changing filter: Resets back to page 1!
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
     setCurrentPage(1); 
   };

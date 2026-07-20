@@ -65,7 +65,7 @@ export interface AdminStats {
 // 8. Admin users list response
 export interface AdminUser {
   _id: string;
-  username: string;
+  name: string;
   email: string;
   role: "user" | "admin";
   createdAt: string;
