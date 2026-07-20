@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/client";
 
-
 // Login page component
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -36,10 +35,14 @@ const Login = () => {
   return (
     <>
       <nav className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
-        <span className="font-bold text-lg tracking-wide">
-          AI Surface Defect Detection
-        </span>
-        <span className="text-sm text-gray-400">Quality Assurance System</span>
+        <div className="flex flex-col">
+          <span className="font-bold text-lg tracking-wide">
+            AI Surface Defect Detection
+          </span>
+          <span className="text-xs text-gray-400">
+            Quality Assurance Dashboard
+          </span>
+        </div>
       </nav>
 
       <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
