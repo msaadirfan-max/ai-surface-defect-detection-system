@@ -14,6 +14,11 @@ mvtec_anomaly_detection/
 dataset/
 *.zip
 *.tar.gz
+# Ignore uploaded files in the backend microservice
+backend/uploads/*
+
+# Keep the folder structure intact on Git by making sure .gitkeep isn't ignored
+!backend/uploads/.gitkeep/
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
