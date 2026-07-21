@@ -42,9 +42,193 @@ This system addresses all three problems.
                                                └──────────────────────┘
 ```
 ---
+The Node.js backend acts as the sole entry point — it handles authentication, rate limiting,
+and image forwarding. The FastAPI AI service is never directly exposed to the browser.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| ML / AI Core | Python · PyTorch · OpenCV · Torchvision |
+| AI Microservice | FastAPI · Uvicorn |
+| Backend | Node.js · Express · MongoDB Atlas · Mongoose |
+| Frontend | React · TypeScript · Vite · Tailwind CSS |
+| Containerisation | Docker · Docker Compose |
+| Auth | JWT · bcryptjs |
+| Training Environment | Google Colab (NVIDIA T4 GPU) |
+
+---
+
+## ML Model
+
+### Architecture
+
+ResNet-50 pretrained on ImageNet, fine-tuned for binary surface defect classification
+with Grad-CAM explainability.
+
+| Property | Value |
+|---|---|
+| Base model | ResNet-50 (IMAGENET1K_V2 weights) |
+| Fine-tuned layers | `layer3`, `layer4`, classification head |
+| Frozen layers | `layer1`, `layer2` |
+| Input resolution | 384 × 384 RGB |
+| Output | `normal` / `defective` + confidence score |
+| Classification head | `Dropout(0.4)` → `Linear(2048, 2)` |
+| Explainability | Grad-CAM heatmap overlay |
+
+### Why ResNet-50
+
+Early layers of ResNet already encode edges, textures, and surface patterns from ImageNet's
+1.2 million images. Fine-tuning only the later layers lets the model adapt these general
+features to the specific visual vocabulary of surface defects — cracks, oil contamination,
+rough texture, glue — without relearning from scratch on a small dataset.
+
+### Training Strategy
+
+**Class imbalance** is the central challenge. The dataset has roughly 4× more Normal images
+than Defective. Three mechanisms address this together:
+
+- `WeightedRandomSampler` — each training batch is balanced to approximately 50/50
+  Normal/Defective regardless of folder counts
+- `CrossEntropyLoss(weight=...)` — higher loss penalty for misclassifying a Defective
+  surface than a Normal one
+- Per-class augmentation — heavy rotation, affine shifts, and colour jitter on Defective
+  images only; mild flips on Normal images
+
+**Two loss functions** are used deliberately. Weighted loss during training pushes the model
+to treat missed defects as costly. Unweighted loss during validation gives an honest,
+comparable number for early stopping — using the weighted loss for validation inflated
+val_loss and caused training to stop too early.
+
+### Dataset
+
+[MVTec Anomaly Detection Dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)
+— flat-surface texture categories only.
+
+| Category | Included | Defect Types |
+|---|---|---|
+| `tile` | ✅ | crack, glue strip, gray stroke, oil, rough |
+| `carpet` | ✅ | color, cut, hole, metal contamination, thread |
+| `leather` | ✅ | color, cut, fold, glue, poke |
+| `wood` | ✅ | color, combined, hole, liquid, scratch |
+| `grid` | ❌ | Grayscale — produces flat R=G=B tensors that destabilise ResNet colour features |
+| All 3D objects | ❌ | Screws, pills, cables — defect morphology irrelevant to surface inspection |
+
+The 3D object categories (hazelnut, toothbrush, transistor, etc.) were excluded deliberately.
+A bent toothbrush bristle and a ceramic surface crack share no learnable visual features.
+Including them would force the model to memorise unrelated patterns at the cost of
+surface-specific accuracy.
+
+**Split:** 70% of defective images → training, 30% → test. All normal images split 80/20.
+
+| Split | Normal | Defective |
+|---|---|---|
+| Train | ~1,030 | ~264 |
+| Test | ~278 | ~117 |
+
+### Key Metric
+
+**Defective recall** — of all actually defective surfaces in the test set, what fraction
+did the model flag?
+
+Overall accuracy is a misleading metric here. A model that predicts Normal for every image
+achieves ~70% accuracy on this test set while catching zero defects. Defective recall
+directly measures what matters in manufacturing: are bad surfaces being caught before they
+reach a customer?
+
+---
+
+## Features
+
+### Regular User
+- Upload surface images via drag-and-drop or file picker
+- Instant PASS / FAIL verdict with confidence score
+- Grad-CAM heatmap showing which surface regions triggered the prediction
+- Personal inspection history with pagination and status filtering
+- Click any inspection row to view full details and heatmap
+
+### Admin
+- System-wide analytics dashboard
+- Defect rate trends over the last 30 days
+- All users' inspection history
+- User management and role assignment
+
+---
+
+## Project Structure
+
+ai-surface-defect-detection-system/
+│
+├── ml/ # Training pipeline
+│ ├── notebooks/
+│ │ └── training.ipynb # Full training notebook (Colab)
+│ └── src/
+│ ├── restructure_mvtec.py # Converts MVTec folder structure → Normal/Defective
+│ └── process_dataset.py # Batch resize all images to 384×384
+│
+├── ai-service/ # FastAPI inference microservice
+│ ├── fast_api/
+│ │ └── main.py # Routes, startup, model loading
+│ ├── model.py # ResNet-50 architecture (matches training exactly)
+│ ├── preprocess.py # Image bytes → normalised tensor
+│ ├── requirements.txt
+│ └── Dockerfile
+│
+├── backend/ # Node.js / Express API
+│ ├── config/
+│ │ └── db.js # MongoDB Atlas connection
+│ ├── models/
+│ │ ├── User.js # User schema (name, email, passwordHash, role)
+│ │ └── Inspection.js # Inspection schema (status, confidence, gradCamUrl)
+│ ├── middleware/
+│ │ ├── auth.js # JWT verification
+│ │ ├── role.js # Admin role guard
+│ │ ├── upload.js # Multer disk storage config
+│ │ └── errorHandler.js # Global error handler
+│ ├── routes/
+│ │ ├── auth.js # POST /auth/register, /auth/login
+│ │ ├── inspect.js # POST /api/inspect
+│ │ ├── inspection.js # GET /api/inspections
+│ │ └── admin.js # GET /api/admin/*
+│ ├── services/
+│ │ └── aiService.js # FastAPI bridge (forwards image, returns prediction)
+│ ├── server.js
+│ ├── package.json
+│ └── Dockerfile
+│
+├── frontend/ # React · TypeScript · Tailwind CSS
+│ └── src/
+│ ├── api/
+│ │ └── client.ts # Axios instance with JWT interceptor
+│ ├── context/
+│ │ └── AuthContext.tsx # Global auth state (token, user, login, logout)
+│ ├── components/
+│ │ ├── Navbar.tsx
+│ │ ├── ProtectedRoute.tsx
+│ │ ├── ResultCard.tsx
+│ │ ├── InspectionTable.tsx
+│ │ ├── InspectionModal.tsx
+│ │ └── StatCard.tsx
+│ ├── pages/
+│ │ ├── Login.tsx
+│ │ ├── Register.tsx
+│ │ ├── Upload.tsx
+│ │ ├── History.tsx
+│ │ └── AdminDashboard.tsx
+│ └── types/
+│ └── index.ts # Shared TypeScript interfaces
+│ ├── package.json
+│ ├── vite.config.ts
+│ ├── tailwind.config.js
+│ └── Dockerfile
+│
+├── docker-compose.yml # Single command local environment
+└── README.md
+
 
 ## Getting Started
-
 ### Prerequisites
 
 - Python 3.10+
