@@ -10,7 +10,6 @@ interface ResultCardProps {
   gradCamLoading: boolean;
 }
 
-
 // ResultCard component that displays the result of an image analysis
 const ResultCard: React.FC<ResultCardProps> = (props) => {
   return (

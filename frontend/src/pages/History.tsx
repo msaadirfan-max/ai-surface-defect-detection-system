@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type {ChangeEvent} from "react";
+import type { ChangeEvent } from "react";
 import Navbar from "../components/Navbar";
 import InspectionTable from "../components/InspectionTable";
 import apiClient from "../api/client";
@@ -14,7 +14,8 @@ const History = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
+  const [selectedInspection, setSelectedInspection] =
+    useState<Inspection | null>(null);
 
   // Fetch Logic inside useEffect
   useEffect(() => {
@@ -47,7 +48,7 @@ const History = () => {
   // Handler for changing filter: Resets back to page 1!
   const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   return (
@@ -58,13 +59,20 @@ const History = () => {
         {/* Header Block */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inspection History</h1>
-            <p className="text-sm text-gray-500">View and filter past visual quality checks</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Inspection History
+            </h1>
+            <p className="text-sm text-gray-500">
+              View and filter past visual quality checks
+            </p>
           </div>
 
           {/* Filter Dropdown */}
           <div className="flex items-center gap-2">
-            <label htmlFor="filter" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="filter"
+              className="text-sm font-medium text-gray-700"
+            >
               Filter Status:
             </label>
             <select
@@ -91,7 +99,9 @@ const History = () => {
         {!loading && inspections.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
-            <p className="text-gray-500 text-lg font-medium">No inspections found.</p>
+            <p className="text-gray-500 text-lg font-medium">
+              No inspections found.
+            </p>
             {statusFilter !== "all" && (
               <p className="text-gray-400 text-sm mt-1">
                 Try changing your status filter above.
@@ -101,9 +111,15 @@ const History = () => {
         ) : (
           // Using React Fragment to wrap multiple components without adding extra nodes to the DOM
           <>
-          
-          <InspectionTable inspections={inspections} loading={loading} onRowClick={setSelectedInspection} />
-          <InspectionModal inspection={selectedInspection} onClose={() => setSelectedInspection(null)} />
+            <InspectionTable
+              inspections={inspections}
+              loading={loading}
+              onRowClick={setSelectedInspection}
+            />
+            <InspectionModal
+              inspection={selectedInspection}
+              onClose={() => setSelectedInspection(null)}
+            />
           </>
         )}
 
@@ -124,7 +140,9 @@ const History = () => {
 
             <button
               disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next →
