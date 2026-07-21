@@ -6,6 +6,8 @@ const checkUserRole = require("../middleware/role");
 const Inspection = require("../models/Inspection");
 const User = require("../models/User");
 
+
+// Apply authentication and role-checking middleware to all admin routes in this file
 router.use(authMiddleware, checkUserRole);
 
 router.get("/stats", async (req, res) => {
@@ -16,7 +18,7 @@ router.get("/stats", async (req, res) => {
     const [stats, totalUsers] = await Promise.all([
       Inspection.aggregate([
         {
-          $facet: {
+          $facet: {      // Facet allows us to run multiple aggregation pipelines in parallel and return the results in a single document
             globalMetrics: [
               {
                 $group: {
@@ -106,7 +108,7 @@ router.get("/inspections", async (req, res) => {
 // ─────────────────────────────────────────────
 router.get("/users", async (req, res) => {
   try {
-    // Select specific fields explicitly to ensure password hashes are NEVER leaked
+    // Mongo DB Query: Select specific fields explicitly to ensure password hashes are NEVER leaked
     const users = await User.find({}, "name email role createdAt");
     return res.status(200).json(users);
   } catch (error) {
@@ -120,19 +122,21 @@ router.get("/users", async (req, res) => {
 router.patch("/users/:id/role", async (req, res) => {
   const { role } = req.body;
 
-  // Validate the incoming role value explicitly
+  // Validate the incoming role value explicitly to be either "user" or "admin"
   if (!["user", "admin"].includes(role)) {
     return res
       .status(400)
       .json({ error: "Invalid role specified. Must be 'user' or 'admin'." });
   }
 
+
   try {
+    // MongoDB Query: Find the user by ID and update their role, returning the updated document
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { role: role },
-      { new: true, runValidators: true },
-    ).select("name email role");
+      { new: true, runValidators: true }, // Ensures the updated document is returned and validators are run
+    ).select("name email role");  // Select only the necessary fields to return, excluding sensitive information like password hashes
 
     if (!updatedUser) {
       return res.status(404).json({ error: "Target user record not found" });
@@ -147,7 +151,7 @@ router.patch("/users/:id/role", async (req, res) => {
   }
 });
 
-// Micro-helper to manage clean rounding rules safely
+// Micro-helper to manage rounding rules safely
 function roundTo(num, places) {
   return +(Math.round(num + "e+" + places) + "e-" + places) || 0;
 }

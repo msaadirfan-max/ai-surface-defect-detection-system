@@ -1,11 +1,10 @@
 // Upload.tsx
 import React, { useState, useRef } from "react";
-import axios from "axios";
 import apiClient from "../api/client";
 import ResultCard from "../components/ResultCard";
 import Navbar from "../components/Navbar";
 import type {
-  PredictExplainResponse,
+  
   InspectionResponse,
 } from "../types/index";
 
@@ -41,29 +40,6 @@ const Upload = () => {
     setPreview(URL.createObjectURL(selectedFile));
   };
 
-  // Handle Grad-CAM request to the backend
-  const handleGradCam = async (selectedFile: File) => {
-    setGradCamLoading(true);
-    try {
-      const gradCamForm = new FormData();
-      gradCamForm.append("file", selectedFile);
-
-      // Send the request to the backend for Grad-CAM analysis
-      const response = await axios.post<PredictExplainResponse>(
-        "http://localhost:8000/predict-explain",
-        gradCamForm,
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
-
-      // Set the Grad-CAM image returned from the backend
-      setGradCam(response.data.gradcam_image);
-    } catch (err) {
-      console.error("Grad-CAM failed:", err);
-      setGradCam(null);
-    } finally {
-      setGradCamLoading(false);
-    }
-  };
 
   // Handle the main analysis request to the backend
   const handleAnalyze = async () => {
@@ -90,9 +66,9 @@ const Upload = () => {
 
       const inspectionData = response.data.inspection;
       setResult(inspectionData);
-
-      // Result card appears immediately, heatmap loads after
-      handleGradCam(file);
+      setGradCam(inspectionData.gradCamUrl || null);
+      setGradCamLoading(false);
+      
     } catch (err: any) {
       setError(
         err.response?.data?.error ||

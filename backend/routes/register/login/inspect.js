@@ -36,6 +36,7 @@ router.post(
         status: aiResponse.status,
         confidence: aiResponse.confidence,
         inferenceTimeMs: aiResponse.inferenceTime,
+        gradCamUrl: aiResponse.gradCamUrl,
       });
 
       return res.status(200).json({

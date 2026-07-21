@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+
+  # 1. FastAPI AI Inference Microservice
+  ai-service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: defect_ai_service
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: always
+
+  # 2. Express Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: defect_backend
+    volumes:
+      - ./backend/uploads:/app/uploads
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - AI_SERVICE_URL=http://ai-service:8000
+      - FASTAPI_URL=http://ai-service:8000
+    depends_on:
+      - ai-service
+    restart: always
+
+  # 3. React Frontend (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000
+    container_name: defect_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+    restart: always

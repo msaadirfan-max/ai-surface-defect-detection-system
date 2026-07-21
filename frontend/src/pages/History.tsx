@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import InspectionTable from "../components/InspectionTable";
 import apiClient from "../api/client";
 import type { Inspection } from "../types/index";
+import InspectionModal from "../components/InspectionModal";
 
 const History = () => {
   // State Definitions
@@ -13,6 +14,7 @@ const History = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
 
   // Fetch Logic inside useEffect
   useEffect(() => {
@@ -97,8 +99,12 @@ const History = () => {
             )}
           </div>
         ) : (
-          /* Table Component */
-          <InspectionTable inspections={inspections} loading={loading} />
+          // Using React Fragment to wrap multiple components without adding extra nodes to the DOM
+          <>
+          
+          <InspectionTable inspections={inspections} loading={loading} onRowClick={setSelectedInspection} />
+          <InspectionModal inspection={selectedInspection} onClose={() => setSelectedInspection(null)} />
+          </>
         )}
 
         {/* Pagination Controls */}

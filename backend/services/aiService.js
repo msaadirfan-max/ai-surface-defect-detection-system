@@ -3,29 +3,28 @@ const axios = require("axios");
 const app = express();
 const FormData = require("form-data");
 
-/*
-@param {Buffer} imageBuffer - The image buffer to be sent to the AI service.
-@param {string} originalFileName - The original file name of the image.
-@param {string} mimeType - The MIME type(jpg/png) of the image.
-*/
-
+// Forward the image to the FastAPI server for prediction
 const forwardToFastApi = async (imageBuffer, originalFileName, mimeType) => {
-  const fastApiUrl = process.env.FASTAPI_URL || "http://localhost:8000";
+  const fastApiUrl = process.env.FASTAPI_URL;
 
   try {
+    // Create a FormData object to send the image
     const formData = new FormData();
-    formData.append("file", imageBuffer, {
+    // Append the image buffer with the original filename and MIME type
+    formData.append("file", imageBuffer, { 
       filename: originalFileName,
       contentType: mimeType,
     });
 
-    const response = await axios.post(`${fastApiUrl}/predict`, formData, {
+    // Send the request to the FastAPI server
+    const response = await axios.post(`${fastApiUrl}/predict-explain`, formData, {
       headers: formData.getHeaders(),
     });
     return {
       status: response.data.status,
       confidence: response.data.confidence,
       inferenceTime: response.data.inference_time_ms,
+      gradCamUrl: response.data.gradcam_image,
     };
   } catch (error) {
     console.error("Error forwarding to FastAPI:", error.message);

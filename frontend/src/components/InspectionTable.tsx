@@ -4,11 +4,14 @@ import type { Inspection } from "../types/index";
 interface InspectionTableProps {
   inspections: Inspection[];
   loading: boolean;
+  onRowClick?: (inspection: Inspection) => void; // Optional callback for row click
 }
 
 const InspectionTable: React.FC<InspectionTableProps> = ({
-  inspections,
+  inspections,          // Destructured prop for the list of inspections
   loading,
+  onRowClick,
+  
 }) => {
   // --- 1. SKELETON LOADING STATE ---
   if (loading) {
@@ -88,13 +91,14 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {inspections.map((inspection, index) => (
-            <tr key={inspection._id} className="hover:bg-gray-50 transition">
+            <tr key={inspection._id} className="hover:bg-gray-50 transition"
+              onClick={() =>  onRowClick?.(inspection)}>
               {/* Row Number */}
               <td className="px-4 py-4 text-sm text-gray-500">{index + 1}</td>
 
               {/* Truncated Inspection ID */}
               <td className="px-4 py-4 text-sm font-mono text-gray-600">
-                {inspection._id.slice(-6)}
+                {inspection._id.slice(-6)} 
               </td>
 
               {/* Date */}
