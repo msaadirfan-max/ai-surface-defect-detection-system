@@ -23,6 +23,8 @@ This system addresses all three problems.
 
 > Upload a surface image → instant PASS / FAIL verdict → confidence score → Grad-CAM heatmap
 
+## System Architecture
+
 ```text
 ┌─────────────────┐     POST /api/inspect      ┌──────────────────────┐
 │  React Web App  │ ─────────────────────────► │  Node.js / Express   │
@@ -413,5 +415,3 @@ Model weights available in [Releases](https://github.com/msaadirfan-max/ai-surfa
 
 
 ---
-
-## System Architecture
