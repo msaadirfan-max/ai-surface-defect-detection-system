@@ -159,73 +159,76 @@ reach a customer?
 
 ## Project Structure
 
+
+```text
 ai-surface-defect-detection-system/
 │
-├── ml/ # Training pipeline
-│ ├── notebooks/
-│ │ └── training.ipynb # Full training notebook (Colab)
-│ └── src/
-│ ├── restructure_mvtec.py # Converts MVTec folder structure → Normal/Defective
-│ └── process_dataset.py # Batch resize all images to 384×384
+├── ml/                              # Training pipeline
+│   ├── notebooks/
+│   │   └── training.ipynb           # Full training notebook (Colab)
+│   └── src/
+│       ├── restructure_mvtec.py     # Converts MVTec folder structure → Normal/Defective
+│       └── process_dataset.py       # Batch resize all images to 384×384
 │
-├── ai-service/ # FastAPI inference microservice
-│ ├── fast_api/
-│ │ └── main.py # Routes, startup, model loading
-│ ├── model.py # ResNet-50 architecture (matches training exactly)
-│ ├── preprocess.py # Image bytes → normalised tensor
-│ ├── requirements.txt
-│ └── Dockerfile
+├── ai-service/                      # FastAPI inference microservice
+│   ├── fast_api/
+│   │   └── main.py                  # Routes, startup, model loading
+│   ├── model.py                     # ResNet-50 architecture (matches training exactly)
+│   ├── preprocess.py                # Image bytes → normalised tensor
+│   ├── requirements.txt
+│   └── Dockerfile
 │
-├── backend/ # Node.js / Express API
-│ ├── config/
-│ │ └── db.js # MongoDB Atlas connection
-│ ├── models/
-│ │ ├── User.js # User schema (name, email, passwordHash, role)
-│ │ └── Inspection.js # Inspection schema (status, confidence, gradCamUrl)
-│ ├── middleware/
-│ │ ├── auth.js # JWT verification
-│ │ ├── role.js # Admin role guard
-│ │ ├── upload.js # Multer disk storage config
-│ │ └── errorHandler.js # Global error handler
-│ ├── routes/
-│ │ ├── auth.js # POST /auth/register, /auth/login
-│ │ ├── inspect.js # POST /api/inspect
-│ │ ├── inspection.js # GET /api/inspections
-│ │ └── admin.js # GET /api/admin/*
-│ ├── services/
-│ │ └── aiService.js # FastAPI bridge (forwards image, returns prediction)
-│ ├── server.js
-│ ├── package.json
-│ └── Dockerfile
+├── backend/                         # Node.js / Express API
+│   ├── config/
+│   │   └── db.js                    # MongoDB Atlas connection
+│   ├── models/
+│   │   ├── User.js                  # User schema (name, email, passwordHash, role)
+│   │   └── Inspection.js            # Inspection schema (status, confidence, gradCamUrl)
+│   ├── middleware/
+│   │   ├── auth.js                  # JWT verification
+│   │   ├── role.js                  # Admin role guard
+│   │   ├── upload.js                # Multer disk storage config
+│   │   └── errorHandler.js          # Global error handler
+│   ├── routes/
+│   │   ├── auth.js                  # POST /auth/register, /auth/login
+│   │   ├── inspect.js               # POST /api/inspect
+│   │   ├── inspection.js            # GET /api/inspections
+│   │   └── admin.js                 # GET /api/admin/*
+│   ├── services/
+│   │   └── aiService.js             # FastAPI bridge (forwards image, returns prediction)
+│   ├── server.js
+│   ├── package.json
+│   └── Dockerfile
 │
-├── frontend/ # React · TypeScript · Tailwind CSS
-│ └── src/
-│ ├── api/
-│ │ └── client.ts # Axios instance with JWT interceptor
-│ ├── context/
-│ │ └── AuthContext.tsx # Global auth state (token, user, login, logout)
-│ ├── components/
-│ │ ├── Navbar.tsx
-│ │ ├── ProtectedRoute.tsx
-│ │ ├── ResultCard.tsx
-│ │ ├── InspectionTable.tsx
-│ │ ├── InspectionModal.tsx
-│ │ └── StatCard.tsx
-│ ├── pages/
-│ │ ├── Login.tsx
-│ │ ├── Register.tsx
-│ │ ├── Upload.tsx
-│ │ ├── History.tsx
-│ │ └── AdminDashboard.tsx
-│ └── types/
-│ └── index.ts # Shared TypeScript interfaces
-│ ├── package.json
-│ ├── vite.config.ts
-│ ├── tailwind.config.js
-│ └── Dockerfile
+├── frontend/                        # React · TypeScript · Tailwind CSS
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── client.ts            # Axios instance with JWT interceptor
+│   │   ├── context/
+│   │   │   └── AuthContext.tsx      # Global auth state (token, user, login, logout)
+│   │   ├── components/
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── ResultCard.tsx
+│   │   │   ├── InspectionTable.tsx
+│   │   │   ├── InspectionModal.tsx
+│   │   │   └── StatCard.tsx
+│   │   ├── pages/
+│   │   │   ├── Login.tsx
+│   │   │   ├── Register.tsx
+│   │   │   ├── Upload.tsx
+│   │   │   ├── History.tsx
+│   │   │   └── AdminDashboard.tsx
+│   │   └── types/
+│   │       └── index.ts             # Shared TypeScript interfaces
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   └── Dockerfile
 │
-├── docker-compose.yml # Single command local environment
+├── docker-compose.yml               # Single command local environment
 └── README.md
+```
 
 
 ## Getting Started
