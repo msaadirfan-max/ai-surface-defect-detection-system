@@ -1,6 +1,6 @@
 // 1. User Information Shape
 export interface User {
-  name: string;
+  username: string;
   email: string;
   role: 'user' | 'admin'; // Enforces that role can ONLY be one of these two strings
 }
@@ -8,7 +8,11 @@ export interface User {
 // 2. Inspection Record Shape
 export interface Inspection {
   _id: string;
-  userId: string;
+  userId: string |{
+    _id: string;
+    username: string;
+    email: string;
+  };
   imageUrl: string;
   status: 'normal' | 'defective'; // Strict validation contract
   confidence: number;            // Notice this should be a number, not a string!
@@ -65,7 +69,7 @@ export interface AdminStats {
 // 8. Admin users list response
 export interface AdminUser {
   _id: string;
-  name: string;
+  username: string;
   email: string;
   role: "user" | "admin";
   createdAt: string;

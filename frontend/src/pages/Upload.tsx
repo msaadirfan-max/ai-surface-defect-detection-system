@@ -3,7 +3,7 @@ import React, { useState, useRef } from "react";
 import apiClient from "../api/client";
 import ResultCard from "../components/ResultCard";
 import Navbar from "../components/Navbar";
-import type { InspectionResponse } from "../types/index";
+import type {InspectionResponse} from "../types/index";
 
 // Define the shape of the inspection result for type safety
 interface InspectionResult {
@@ -25,6 +25,7 @@ const Upload = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
 
   // Handle file selection and reset previous results
   const handleFileChange = (selectedFile: File) => {
@@ -35,6 +36,7 @@ const Upload = () => {
     setFile(selectedFile);
     setPreview(URL.createObjectURL(selectedFile));
   };
+
 
   // Handle the main analysis request to the backend
   const handleAnalyze = async () => {

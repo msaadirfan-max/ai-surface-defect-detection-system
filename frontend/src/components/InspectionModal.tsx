@@ -131,7 +131,7 @@ const InspectionModal: React.FC<InspectionModalProps> = ({
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                Grad-CAM Heatmap
+                Prediction Heatmap
               </h3>
               <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-900 flex items-center justify-center min-h-[200px]">
                 {inspection.gradCamUrl ? (
@@ -141,7 +141,7 @@ const InspectionModal: React.FC<InspectionModalProps> = ({
                         ? inspection.gradCamUrl
                         : `data:image/png;base64,${inspection.gradCamUrl}`
                     }
-                    alt="Grad-CAM Heatmap"
+                    alt="Prediction Heatmap"
                     className="max-h-64 object-contain"
                   />
                 ) : (

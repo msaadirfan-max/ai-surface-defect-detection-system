@@ -5,12 +5,14 @@ interface InspectionTableProps {
   inspections: Inspection[];
   loading: boolean;
   onRowClick?: (inspection: Inspection) => void; // Optional callback for row click
+  showUser?: boolean;
 }
 
 const InspectionTable: React.FC<InspectionTableProps> = ({
   inspections, // Destructured prop for the list of inspections
   loading,
   onRowClick,
+  showUser = true, // Default to showing user column
 }) => {
   // --- 1. SKELETON LOADING STATE ---
   if (loading) {
@@ -24,6 +26,9 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Inspection ID
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                User
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Date
@@ -72,6 +77,9 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               Inspection ID
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              User
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
               Date
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -102,6 +110,14 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               <td className="px-4 py-4 text-sm font-mono text-gray-600">
                 {inspection._id.slice(-6)}
               </td>
+              {/* User Info */}
+              {showUser && (
+                <td className="px-4 py-4 text-sm text-gray-700">
+                  {typeof inspection.userId === "object"
+                    ? inspection.userId.username
+                    : "Unknown"}
+                </td>
+              )}
 
               {/* Date */}
               <td className="px-4 py-4 text-sm text-gray-700">

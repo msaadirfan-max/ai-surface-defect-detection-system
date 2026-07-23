@@ -85,8 +85,8 @@ router.get("/inspections", async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        // Populates the user details field matching name and email requirements
-        .populate("userId", "name email"),
+        // Populates the user details field matching username and email requirements
+        .populate("userId", "username email"),
       Inspection.countDocuments(),
     ]);
 
@@ -109,7 +109,7 @@ router.get("/inspections", async (req, res) => {
 router.get("/users", async (req, res) => {
   try {
     // Mongo DB Query: Select specific fields explicitly to ensure password hashes are NEVER leaked
-    const users = await User.find({}, "name email role createdAt");
+    const users = await User.find({}, "username email role createdAt");
     return res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching system users" });
@@ -136,7 +136,7 @@ router.patch("/users/:id/role", async (req, res) => {
       req.params.id,
       { role: role },
       { new: true, runValidators: true }, // Ensures the updated document is returned and validators are run
-    ).select("name email role");  // Select only the necessary fields to return, excluding sensitive information like password hashes
+    ).select("username email role");  // Select only the necessary fields to return, excluding sensitive information like password hashes
 
     if (!updatedUser) {
       return res.status(404).json({ error: "Target user record not found" });
