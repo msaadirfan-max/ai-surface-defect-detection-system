@@ -14,6 +14,7 @@ import InspectionTable from "../components/InspectionTable";
 import InspectionModal from "../components/InspectionModal";
 import apiClient from "../api/client";
 import type { AdminStats, AdminUser, Inspection } from "../types/index";
+import { toast } from "react-hot-toast/headless";
 
 const AdminDashboard = () => {
   const { user: currentUser } = useAuth(); // Get the current logged-in user
@@ -74,7 +75,7 @@ const AdminDashboard = () => {
       );
     } catch (err) {
       console.error("Role change failed:", err);
-      alert("Failed to update user role.");
+      toast.error("Failed to update user role.");
     }
   };
 

@@ -8,6 +8,7 @@ import Upload from "./pages/Upload";
 import Register from "./pages/Register";
 import History from "./pages/History";
 import AdminDashboard from "./pages/AdminDashboard";
+import {Toaster} from "react-hot-toast";
 
 import "./index.css";
 
@@ -16,6 +17,7 @@ ReactDom.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
+        <Toaster position="top-right" reverseOrder={false} />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

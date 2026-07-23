@@ -5,7 +5,7 @@ import InspectionTable from "../components/InspectionTable";
 import apiClient from "../api/client";
 import type { Inspection } from "../types/index";
 import InspectionModal from "../components/InspectionModal";
-
+import  toast  from "react-hot-toast";
 const History = () => {
   // State Definitions
   const [inspections, setInspections] = useState<Inspection[]>([]);
@@ -37,6 +37,7 @@ const History = () => {
       } catch (err) {
         console.error("Fetch error:", err);
         setError("Failed to fetch inspection history.");
+        toast.error("Failed to fetch inspection history.");
       } finally {
         setLoading(false);
       }
@@ -90,9 +91,7 @@ const History = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
-            {error}
-          </div>
+          toast.error(error)
         )}
 
         {/* Main Content Area */}

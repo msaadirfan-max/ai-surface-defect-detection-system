@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/client";
-
+import  toast  from "react-hot-toast";
 // Login page component
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -20,6 +20,9 @@ const Login = () => {
     setError("");
     try {
       const response = await apiClient.post("/auth/login", { email, password });
+      if (response){
+        toast.success("Login successful!");
+      }
       const { token, username, email: userEmail, role } = response.data;
       login(token, { username, email: userEmail, role });
       navigate("/upload", { replace: true });
@@ -27,6 +30,7 @@ const Login = () => {
       const serverError =
         error.response?.data?.error || "An error occurred during login.";
       setError(serverError);
+      toast.error(serverError);
     } finally {
       setLoading(false);
     }

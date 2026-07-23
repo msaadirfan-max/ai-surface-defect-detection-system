@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const baseUrl = import.meta.env.VITE_API_URL 
 
@@ -24,6 +25,7 @@ apiClient.interceptors.request.use(
     },
     (error) => {
         console.error("Error in request:", error);
+        toast.error("An error occurred while sending the request.");
         return Promise.reject(error);
         
     }
@@ -37,11 +39,12 @@ apiClient.interceptors.response.use(
         if (error.response && error.response.status === 401) {
             // Handle unauthorized error (e.g., redirect to login page)
             console.error("Unauthorized access - redirecting to login.");
+            toast.error("An error occurred while processing the response.");
             localStorage.removeItem("token"); // Clear the token from localStorage
             window.location.href = "/login"; // Redirect to login page
+            
         }
-
-
+        
         return Promise.reject(error);
     }
 );

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { type User } from "../types/index";
+import toast from "react-hot-toast";
 
 interface AuthContextType {
   // Define the shape of the context value
@@ -35,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error("Error parsing stored user data:", error);
+      toast.error("Error loading user data. Please log in again.");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     }

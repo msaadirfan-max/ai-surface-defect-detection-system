@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/client";
+import toast  from "react-hot-toast";
 
 const Register = () => {
   const [username, setUsername] = useState("");
@@ -143,14 +144,10 @@ const Register = () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg">
-                {error}
-              </div>
+              toast.error(error)
             )}
             {success && (
-              <div className="bg-green-50 border border-green-200 text-green-600 text-sm px-4 py-3 rounded-lg">
-                Account created successfully! Redirecting to login...
-              </div>
+              toast.success("Registration successful! Redirecting to login...")
             )}
             <button
               type="submit"
