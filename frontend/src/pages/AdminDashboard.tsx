@@ -15,6 +15,8 @@ import InspectionModal from "../components/InspectionModal";
 import apiClient from "../api/client";
 import type { AdminStats, AdminUser, Inspection } from "../types/index";
 import { toast } from "react-hot-toast/headless";
+import PageTransition from "../components/PageTransition";
+
 
 const AdminDashboard = () => {
   const { user: currentUser } = useAuth(); // Get the current logged-in user
@@ -73,6 +75,7 @@ const AdminDashboard = () => {
           u._id === userId ? { ...u, role: newRole as "admin" | "user" } : u,
         ),
       );
+      toast.success("User role updated successfully.");
     } catch (err) {
       console.error("Role change failed:", err);
       toast.error("Failed to update user role.");
@@ -92,6 +95,7 @@ const AdminDashboard = () => {
     })) || [];
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
@@ -270,6 +274,7 @@ const AdminDashboard = () => {
         </div>
       </main>
     </div>
+    </PageTransition>
   );
 };
 

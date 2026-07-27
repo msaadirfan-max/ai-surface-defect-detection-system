@@ -10,6 +10,8 @@ const User = require("../models/User");
 // Apply authentication and role-checking middleware to all admin routes in this file
 router.use(authMiddleware, checkUserRole);
 
+
+// Set up a GET endpoint to fetch aggregated statistics for the admin dashboard
 router.get("/stats", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
@@ -71,9 +73,9 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
-// 2. GET /admin/inspections (Global Paginated History)
-// ─────────────────────────────────────────────
+
+
+// Paginated endpoint to fetch all inspections in the system, accessible only to admin users
 router.get("/inspections", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -103,9 +105,8 @@ router.get("/inspections", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
-// 3. GET /admin/users (User Listing)
-// ─────────────────────────────────────────────
+
+// Endpoint to fetch all registered users in the system, accessible only to admin users
 router.get("/users", async (req, res) => {
   try {
     // Mongo DB Query: Select specific fields explicitly to ensure password hashes are NEVER leaked
@@ -116,9 +117,9 @@ router.get("/users", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
-// 4. PATCH /admin/users/:id/role (Role Management)
-// ─────────────────────────────────────────────
+
+
+// Endpoint to update a user's role, accessible only to admin users
 router.patch("/users/:id/role", async (req, res) => {
   const { role } = req.body;
 

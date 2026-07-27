@@ -17,19 +17,19 @@ router.post(
     try {
       const imageBuffer = fs.readFileSync(
         req.file.path,
-      ); /* Read the uploaded file into a buffer */
+      ); // Read the uploaded file into a buffer 
 
       const aiResponse = await forwardToFastApi(
-        /* Send the image buffer to the FastAPI service for processing */
+        // Send the image buffer to the FastAPI service for processing
         imageBuffer,
         req.file.originalname,
         req.file.mimetype,
       );
 
-      /* Construct the URL for the uploaded image based on the server's protocol, host, and the filename */
+      // Construct the URL for the uploaded image based on the server's protocol, host, and the filename
       const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`; 
 
-      /* Construct a new inspection record in the database with the user ID, image URL, and AI response data */
+      // Construct a new inspection record in the database with the user ID, image URL, and AI response data
       const inspection = await Inspection.create({         
         userId: req.user.userId,
         imageUrl: imageUrl,

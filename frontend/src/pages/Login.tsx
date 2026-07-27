@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/client";
 import  toast  from "react-hot-toast";
+import PageTransition from "../components/PageTransition";
 // Login page component
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -15,16 +16,24 @@ const Login = () => {
 
   // Handle form submission
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault(); // Prevent from reload on Form Submission
     setLoading(true);
     setError("");
     try {
+
+      // Using axios sending a POST request to the backend API for login with email and password
       const response = await apiClient.post("/auth/login", { email, password });
+      if (response.status == 401) {
+        setError("Invalid email or password.");
+        toast.error("Invalid email or password.");
+      }
       if (response){
         toast.success("Login successful!");
       }
       const { token, username, email: userEmail, role } = response.data;
-      login(token, { username, email: userEmail, role });
+      // Saving the token and user data in the AuthContext and localStorage
+      login(token, { username, email: userEmail, role });  
+      // Redirecting to the upload page after successful login
       navigate("/upload", { replace: true });
     } catch (error: any) {
       const serverError =
@@ -37,7 +46,7 @@ const Login = () => {
   }
 
   return (
-    <>
+    <PageTransition>
       <nav className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
         <div className="flex flex-col">
           <span className="font-bold text-lg tracking-wide">
@@ -123,7 +132,7 @@ const Login = () => {
           </p>
         </div>
       </div>
-    </>
+    </PageTransition>
   );
 };
 

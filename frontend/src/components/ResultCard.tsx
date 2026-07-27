@@ -1,4 +1,5 @@
 import React from "react";
+import {getConfidenceColor} from "../components/confidence";
 
 // Define the props for the ResultCard component
 interface ResultCardProps {
@@ -30,8 +31,10 @@ const ResultCard: React.FC<ResultCardProps> = (props) => {
       {/* Metrics */}
       <div className="space-y-2 text-gray-700 mb-6">
         <p className="text-sm">
-          <span className="font-semibold text-gray-900">Confidence:</span>{" "}
-          {(props.confidence * 100).toFixed(1)}%
+          <span className="font-semibold text-gray-900">Confidence:</span>
+          <span className={getConfidenceColor(props.confidence)}>
+            {(props.confidence * 100).toFixed(1)}%
+          </span>
         </p>
         <p className="text-sm">
           <span className="font-semibold text-gray-900">Inference Time:</span>{" "}

@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import History from "./pages/History";
 import AdminDashboard from "./pages/AdminDashboard";
 import {Toaster} from "react-hot-toast";
+import {AnimatePresence} from "framer-motion";
 
 import "./index.css";
 
@@ -18,16 +19,17 @@ ReactDom.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AuthProvider>
         <Toaster position="top-right" reverseOrder={false} />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-          <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/" element={<Navigate replace to="/login" />} />
-          <Route path="*" element={<Navigate replace to="/login" />} />
-        </Routes>
-        
+         <AnimatePresence mode = 'wait'>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/" element={<Navigate replace to="/login" />} />
+            <Route path="*" element={<Navigate replace to="/login" />} />
+          </Routes>
+        </AnimatePresence>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,

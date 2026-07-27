@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import type { Inspection } from "../types/index";
+import { getConfidenceColor } from "../components/confidence";
 
 interface InspectionModalProps {
   inspection: Inspection | null; // null means hidden
@@ -86,8 +87,14 @@ const InspectionModal: React.FC<InspectionModalProps> = ({
               <p className="text-xs text-gray-500 font-medium uppercase">
                 Confidence
               </p>
-              <p className="text-lg font-semibold text-gray-800">
-                {(inspection.confidence * 100).toFixed(1)}%
+              <p className="flex items-center">
+                <span className={getConfidenceColor(inspection.confidence)}>
+                  {(inspection.confidence <= 1
+                    ? inspection.confidence * 100
+                    : inspection.confidence
+                  ).toFixed(1)}
+                  %
+                </span>
               </p>
             </div>
             <div>

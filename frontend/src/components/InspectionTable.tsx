@@ -1,5 +1,6 @@
 import React from "react";
 import type { Inspection } from "../types/index";
+import { getConfidenceColor } from "../components/confidence";
 
 interface InspectionTableProps {
   inspections: Inspection[];
@@ -144,8 +145,14 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               </td>
 
               {/* Confidence */}
-              <td className="px-4 py-4 text-sm text-gray-700">
-                {(inspection.confidence * 100).toFixed(1)}%
+              <td className={`px-4 py-3 whitespace-nowrap text-sm`}>
+                <span className={getConfidenceColor(inspection.confidence)}>
+                  {(inspection.confidence <= 1
+                    ? inspection.confidence * 100
+                    : inspection.confidence
+                  ).toFixed(1)}
+                  %
+                </span>
               </td>
 
               {/* Inference Time */}

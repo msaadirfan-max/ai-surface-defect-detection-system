@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Load token and user from localStorage on startup
+  // Load token and user from localStorage on startup otherwise on reload we will lose the state and user will be logged out
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -68,10 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Provide the context value to children components
   return (
-    <AuthContext.Provider
+    <AuthContext.Provider  // Adding Values in AuthContext
       value={{ token, user, isAuthenticated, isAdmin, login, logout, loading }}
     >
-      {!loading && children}
+      {!loading && children}    
     </AuthContext.Provider>
   );
 };

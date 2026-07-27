@@ -12,8 +12,8 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 connectDB();
 
-app.use(express.json());
-app.use(cors());
+app.use(express.json());   // Parse incoming JSON requests
+app.use(cors());         // Enable CORS for cross-origin requests
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/inspect", inspectRoutes);  // For image upload and to get inspection results
@@ -31,7 +31,7 @@ app.use((req, res, next) => {    // Catch-all route for undefined endpoints
 
 
 
-app.use(errorHandler);
+app.use(errorHandler);   // Custom error handling middleware
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

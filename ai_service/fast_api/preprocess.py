@@ -36,10 +36,10 @@ def preprocess_image(image_bytes: bytes) -> torch.Tensor:
     Raises:
         ValueError : if image cannot be decoded (corrupted or wrong format)
     """
-    # Step 1: bytes → numpy array
+    # bytes → numpy array
     np_array = np.frombuffer(image_bytes, dtype=np.uint8)
 
-    # Step 2: numpy array → OpenCV BGR image
+    # numpy array → OpenCV BGR image
     img_bgr = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
     if img_bgr is None:
         raise ValueError(
@@ -47,17 +47,17 @@ def preprocess_image(image_bytes: bytes) -> torch.Tensor:
             "File may be corrupted or not a valid image format."
         )
 
-    # Step 3: BGR → RGB (this is very important)
+    # BGR → RGB 
     # OpenCV reads as BGR, PyTorch/torchvision expects RGB
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-    # Step 4: numpy array → PIL Image (torchvision transforms expect PIL)
+    # numpy array → PIL Image (torchvision transforms expect PIL)
     pil_image = Image.fromarray(img_rgb)
 
-    # Step 5: Apply Resize → ToTensor → Normalize
+    # Apply Resize → ToTensor → Normalize
     tensor = _transform(pil_image)
 
-    # Step 6: Add batch dimension [3, 384, 384] → [1, 3, 384, 384]
+    # Added batch dimension [3, 384, 384] → [1, 3, 384, 384]
     tensor = tensor.unsqueeze(0)
 
     return tensor

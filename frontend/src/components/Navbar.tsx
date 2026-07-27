@@ -44,7 +44,7 @@ const Navbar = () => {
           <NavLink
             to="/admin"
             className={({ isActive }) =>
-              isActive
+              isActive   // When active, apply the active styles; otherwise, apply the default styles
                 ? "text-white font-bold border-b-2 border-blue-500 pb-1"
                 : "text-gray-400 hover:text-gray-200 transition"
             }
