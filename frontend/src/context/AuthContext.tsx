@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { type User } from "../types/index";
+import toast from "react-hot-toast";
 
 interface AuthContextType {
   // Define the shape of the context value
@@ -23,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Load token and user from localStorage on startup
+  // Load token and user from localStorage on startup otherwise on reload we will lose the state and user will be logged out
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -35,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error("Error parsing stored user data:", error);
+      toast.error("Error loading user data. Please log in again.");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     }
@@ -66,10 +68,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Provide the context value to children components
   return (
-    <AuthContext.Provider
+    <AuthContext.Provider  // Adding Values in AuthContext
       value={{ token, user, isAuthenticated, isAdmin, login, logout, loading }}
     >
-      {!loading && children}
+      {!loading && children}    
     </AuthContext.Provider>
   );
 };

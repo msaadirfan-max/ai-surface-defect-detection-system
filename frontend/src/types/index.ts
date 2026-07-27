@@ -1,6 +1,6 @@
 // 1. User Information Shape
 export interface User {
-  name: string;
+  username: string;
   email: string;
   role: 'user' | 'admin'; // Enforces that role can ONLY be one of these two strings
 }
@@ -8,7 +8,11 @@ export interface User {
 // 2. Inspection Record Shape
 export interface Inspection {
   _id: string;
-  userId: string;
+  userId: string |{
+    _id: string;
+    username: string;
+    email: string;
+  };
   imageUrl: string;
   status: 'normal' | 'defective'; // Strict validation contract
   confidence: number;            // Notice this should be a number, not a string!
@@ -20,22 +24,14 @@ export interface Inspection {
 
 }
 
-// 3. Login Response Back Shape
-export interface LoginResponse {
-  token: string;
-  name: string;
-  email: string;
-  role: 'user' | 'admin';
-  message: string; 
-}
 
-// 4. Inspection Upload Response Shape
+// 3. Inspection Upload Response Shape
 export interface InspectionResponse {
   success: boolean;             // booleans use true/false instead of string statuses
   inspection: Inspection;        // Reuses the Inspection interface we defined above!
 }
 
-// 5. Paginated History Response Shape
+// 4. Paginated History Response Shape
 export interface PaginatedInspections {
   inspections: Inspection[];     // An array filled with our Inspection objects
   totalCount: number;
@@ -43,14 +39,8 @@ export interface PaginatedInspections {
   totalPages: number;
 }
 
-export interface PredictExplainResponse {
-status: "normal" | "defective";
-  confidence: number;
-  inference_time_ms: number;
-  gradcam_image: string;  // base64 string
-}
 
-// 7. Admin stats response
+// 5. Admin stats response
 export interface AdminStats {
   totalInspections: number;
   defectiveCount: number;
@@ -62,10 +52,10 @@ export interface AdminStats {
   }[];
 }
 
-// 8. Admin users list response
+// 6. Admin users list response
 export interface AdminUser {
   _id: string;
-  name: string;
+  username: string;
   email: string;
   role: "user" | "admin";
   createdAt: string;

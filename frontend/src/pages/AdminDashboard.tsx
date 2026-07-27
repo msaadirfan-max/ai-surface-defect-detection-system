@@ -11,8 +11,12 @@ import Navbar from "../components/Navbar";
 import StatCard from "../components/StatCard";
 import { useAuth } from "../context/AuthContext";
 import InspectionTable from "../components/InspectionTable";
+import InspectionModal from "../components/InspectionModal";
 import apiClient from "../api/client";
 import type { AdminStats, AdminUser, Inspection } from "../types/index";
+import { toast } from "react-hot-toast/headless";
+import PageTransition from "../components/PageTransition";
+
 
 const AdminDashboard = () => {
   const { user: currentUser } = useAuth(); // Get the current logged-in user
@@ -25,6 +29,8 @@ const AdminDashboard = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedInspection, setSelectedInspection] =
+    useState<Inspection | null>(null);
 
   // 1. Simultaneous Data Fetching with Promise.all
   useEffect(() => {
@@ -69,9 +75,10 @@ const AdminDashboard = () => {
           u._id === userId ? { ...u, role: newRole as "admin" | "user" } : u,
         ),
       );
+      toast.success("User role updated successfully.");
     } catch (err) {
       console.error("Role change failed:", err);
-      alert("Failed to update user role.");
+      toast.error("Failed to update user role.");
     }
   };
 
@@ -88,6 +95,7 @@ const AdminDashboard = () => {
     })) || [];
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
@@ -185,7 +193,7 @@ const AdminDashboard = () => {
                 {users.map((u) => (
                   <tr key={u._id}>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {u.name}
+                      {u.username}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {u.email}
@@ -228,7 +236,16 @@ const AdminDashboard = () => {
           <h2 className="text-lg font-bold text-gray-800 mb-4">
             System-wide Inspections
           </h2>
-          <InspectionTable inspections={inspections} loading={loading} />
+          <InspectionTable
+            inspections={inspections}
+            loading={loading}
+            showUser={true}
+            onRowClick={setSelectedInspection}
+          />
+          <InspectionModal
+            inspection={selectedInspection}
+            onClose={() => setSelectedInspection(null)}
+          />
 
           {/* Pagination */}
           {!loading && inspections.length > 0 && (
@@ -257,6 +274,7 @@ const AdminDashboard = () => {
         </div>
       </main>
     </div>
+    </PageTransition>
   );
 };
 

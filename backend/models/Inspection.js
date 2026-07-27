@@ -1,11 +1,14 @@
 const mongoose = require("mongoose");
 
 const InspectionSchema = new mongoose.Schema({
+  // The user who performed the inspection
   userId: {
-    type: mongoose.Schema.Types.ObjectId,
+    // Only valid objectId with 12 bytes of binary data
+    type: mongoose.Schema.Types.ObjectId,    
     required: true,
-    ref: "User",
+    ref: "User", // Reference to the User model (schema)
   },
+  // The URL of the image that was inspected
   imageUrl: {
     type: String,
     required: true,

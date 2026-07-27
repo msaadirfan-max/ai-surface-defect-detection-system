@@ -6,8 +6,12 @@ const checkUserRole = require("../middleware/role");
 const Inspection = require("../models/Inspection");
 const User = require("../models/User");
 
+
+// Apply authentication and role-checking middleware to all admin routes in this file
 router.use(authMiddleware, checkUserRole);
 
+
+// Set up a GET endpoint to fetch aggregated statistics for the admin dashboard
 router.get("/stats", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
@@ -16,7 +20,7 @@ router.get("/stats", async (req, res) => {
     const [stats, totalUsers] = await Promise.all([
       Inspection.aggregate([
         {
-          $facet: {
+          $facet: {      // Facet allows us to run multiple aggregation pipelines in parallel and return the results in a single document
             globalMetrics: [
               {
                 $group: {
@@ -69,9 +73,9 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
-// 2. GET /admin/inspections (Global Paginated History)
-// ─────────────────────────────────────────────
+
+
+// Paginated endpoint to fetch all inspections in the system, accessible only to admin users
 router.get("/inspections", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -83,8 +87,8 @@ router.get("/inspections", async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        // Populates the user details field matching name and email requirements
-        .populate("userId", "name email"),
+        // Populates the user details field matching username and email requirements
+        .populate("userId", "username email"),
       Inspection.countDocuments(),
     ]);
 
@@ -101,38 +105,39 @@ router.get("/inspections", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
-// 3. GET /admin/users (User Listing)
-// ─────────────────────────────────────────────
+
+// Endpoint to fetch all registered users in the system, accessible only to admin users
 router.get("/users", async (req, res) => {
   try {
-    // Select specific fields explicitly to ensure password hashes are NEVER leaked
-    const users = await User.find({}, "name email role createdAt");
+    // Mongo DB Query: Select specific fields explicitly to ensure password hashes are NEVER leaked
+    const users = await User.find({}, "username email role createdAt");
     return res.status(200).json(users);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching system users" });
   }
 });
 
-// ─────────────────────────────────────────────
-// 4. PATCH /admin/users/:id/role (Role Management)
-// ─────────────────────────────────────────────
+
+
+// Endpoint to update a user's role, accessible only to admin users
 router.patch("/users/:id/role", async (req, res) => {
   const { role } = req.body;
 
-  // Validate the incoming role value explicitly
+  // Validate the incoming role value explicitly to be either "user" or "admin"
   if (!["user", "admin"].includes(role)) {
     return res
       .status(400)
       .json({ error: "Invalid role specified. Must be 'user' or 'admin'." });
   }
 
+
   try {
+    // MongoDB Query: Find the user by ID and update their role, returning the updated document
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { role: role },
-      { new: true, runValidators: true },
-    ).select("name email role");
+      { new: true, runValidators: true }, // Ensures the updated document is returned and validators are run
+    ).select("username email role");  // Select only the necessary fields to return, excluding sensitive information like password hashes
 
     if (!updatedUser) {
       return res.status(404).json({ error: "Target user record not found" });
@@ -147,7 +152,7 @@ router.patch("/users/:id/role", async (req, res) => {
   }
 });
 
-// Micro-helper to manage clean rounding rules safely
+// Micro-helper to manage rounding rules safely
 function roundTo(num, places) {
   return +(Math.round(num + "e+" + places) + "e-" + places) || 0;
 }

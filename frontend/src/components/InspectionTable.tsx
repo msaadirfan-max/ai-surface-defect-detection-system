@@ -1,14 +1,19 @@
 import React from "react";
 import type { Inspection } from "../types/index";
+import { getConfidenceColor } from "../components/confidence";
 
 interface InspectionTableProps {
   inspections: Inspection[];
   loading: boolean;
+  onRowClick?: (inspection: Inspection) => void; // Optional callback for row click
+  showUser?: boolean;
 }
 
 const InspectionTable: React.FC<InspectionTableProps> = ({
-  inspections,
+  inspections, // Destructured prop for the list of inspections
   loading,
+  onRowClick,
+  showUser = true, // Default to showing user column
 }) => {
   // --- 1. SKELETON LOADING STATE ---
   if (loading) {
@@ -22,6 +27,9 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Inspection ID
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                User
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Date
@@ -70,6 +78,9 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               Inspection ID
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              User
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
               Date
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -88,7 +99,11 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {inspections.map((inspection, index) => (
-            <tr key={inspection._id} className="hover:bg-gray-50 transition">
+            <tr
+              key={inspection._id}
+              className="hover:bg-gray-50 transition"
+              onClick={() => onRowClick?.(inspection)}
+            >
               {/* Row Number */}
               <td className="px-4 py-4 text-sm text-gray-500">{index + 1}</td>
 
@@ -96,6 +111,14 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               <td className="px-4 py-4 text-sm font-mono text-gray-600">
                 {inspection._id.slice(-6)}
               </td>
+              {/* User Info */}
+              {showUser && (
+                <td className="px-4 py-4 text-sm text-gray-700">
+                  {typeof inspection.userId === "object"
+                    ? inspection.userId.username
+                    : "Unknown"}
+                </td>
+              )}
 
               {/* Date */}
               <td className="px-4 py-4 text-sm text-gray-700">
@@ -122,8 +145,14 @@ const InspectionTable: React.FC<InspectionTableProps> = ({
               </td>
 
               {/* Confidence */}
-              <td className="px-4 py-4 text-sm text-gray-700">
-                {(inspection.confidence * 100).toFixed(1)}%
+              <td className={`px-4 py-3 whitespace-nowrap text-sm`}>
+                <span className={getConfidenceColor(inspection.confidence)}>
+                  {(inspection.confidence <= 1
+                    ? inspection.confidence * 100
+                    : inspection.confidence
+                  ).toFixed(1)}
+                  %
+                </span>
               </td>
 
               {/* Inference Time */}

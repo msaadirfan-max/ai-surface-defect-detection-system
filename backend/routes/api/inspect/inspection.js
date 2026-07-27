@@ -6,24 +6,32 @@ const authMiddleware = require("../../../middleware/auth");
 
 let array = [];
 
-routes.get("/", authMiddleware, async (req, res,next) => {
+// History of inspections for the logged-in user with pagination and optional status filter
+routes.get("/", authMiddleware, async (req, res, next) => {
   try {
+    // Build the query object based on the logged-in user and optional status filter
     const query = {
       userId: req.user.userId,
     };
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    // Pagination parameters
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Limit 10
     const status = req.query.status || null;
 
     if (status) {
       query.status = status;
     }
 
-    const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit; // Calculate the number of documents to skip for pagination
 
+    // Fetch inspections and total count in parallel
     const [inspections, totalCount] = await Promise.all([
-      Inspection.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Inspection.find(query)
+        .populate("userId", "username email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
       Inspection.countDocuments(query),
     ]);
 
@@ -39,7 +47,8 @@ routes.get("/", authMiddleware, async (req, res,next) => {
   }
 });
 
-routes.get("/:id", authMiddleware, async (req, res,next) => {
+// Get a specific inspection by ID, ensuring the logged-in user is the owner
+routes.get("/:id", authMiddleware, async (req, res, next) => {
   try {
     const inspection = await Inspection.findById(req.params.id);
     if (!inspection) {

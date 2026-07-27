@@ -2,13 +2,13 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-/* Multer configuration for handling file uploads via disk storage. 
-Saves processed images directly to the 'uploads/' directory with a unique timestamped filename.
-Includes file filter validation to enforce 5MB limits and reject non-image file types.
-*/
+// Multer configuration for handling file uploads via disk storage. 
+// Saves processed images directly to the 'uploads/' directory with a unique timestamped filename.
+// Includes file filter validation to enforce 5MB limits and reject non-image file types.
 
-if (!fs.existsSync("uploads")) {
-  /* Check if the 'uploads' directory exists, and create it if it doesn't */
+
+if (!fs.existsSync("uploads")) {  
+  // Check if the 'uploads' directory exists, and create it if it doesn't 
   fs.mkdirSync("uploads");
 }
 
@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
     cb(
       null,
       "uploads/",
-    ); /* cb is the callback that is asynchronously called to specify the destination directory for uploaded files. */
+    ); // cb is the callback that is asynchronously called to specify the destination directory for uploaded files.
   },
   filename: function (req, file, cb) {
     const uniqueName =
@@ -26,13 +26,13 @@ const storage = multer.diskStorage({
       Math.floor(Math.random() * 1000000000) +
       path.extname(
         file.originalname,
-      ); /* Generate unique filename by using date timestamp, random number, and original file extension */
+      ); // Generate unique filename by using date timestamp, random number, and original file extension
     cb(null, uniqueName);
   },
 });
 
 const fileFilter = (req, file, cb) => {
-  /* Validating Format */
+  // Validating Format
   const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
 
   const isExtensionValid = /\.(jpeg|jpg|png)$/i.test(file.originalname);
@@ -43,7 +43,7 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(
-      new Error(
+      new Error( //Creating Error Object
         "Invalid file type. Only JPEG, PNG, and JPG files are allowed.",
       ),
       false,

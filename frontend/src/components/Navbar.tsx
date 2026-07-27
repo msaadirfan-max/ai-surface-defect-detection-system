@@ -44,7 +44,7 @@ const Navbar = () => {
           <NavLink
             to="/admin"
             className={({ isActive }) =>
-              isActive
+              isActive   // When active, apply the active styles; otherwise, apply the default styles
                 ? "text-white font-bold border-b-2 border-blue-500 pb-1"
                 : "text-gray-400 hover:text-gray-200 transition"
             }
@@ -58,7 +58,7 @@ const Navbar = () => {
       <div className="flex items-center gap-4">
         {user && (
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-300">Welcome, {user.name}</span>
+            <span className="text-sm text-gray-300">Welcome, {user.username}</span>
             <button
               className="text-xs bg-red-600/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition"
               onClick={logout}
