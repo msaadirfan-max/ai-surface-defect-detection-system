@@ -15,8 +15,7 @@ const apiClient = axios.create({
 
 //Request interceptor to add the token to the request headers
 apiClient.interceptors.request.use(
-  // Config is used to modify the request before it is sent. 
-  // Here, we are adding the Authorization header with the token from localStorage if it exists.
+  // Config is used to modify the request before it is sent. Here, we are adding the Authorization header with the token from localStorage if it exists.
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {

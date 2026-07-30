@@ -9,3 +9,4 @@ export const getConfidenceColor = (confidence: number): string => {
   
   return "bg-red-100 text-red-800 border border-red-300 px-2 py-0.5 rounded text-xs font-medium ml-1.5";
 };
+
