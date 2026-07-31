@@ -1,5 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import type {User} from '../types/index';
 import {storage} from '../utils/storage';
 
@@ -41,23 +40,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loadAuthData();
     }, []);
 
-    const login = React.useMemo(() => {
-        return async (newToken: string, newUser: User) => {
+    const login = useCallback(async (newToken: string, newUser: User) => {
         setToken(newToken);
         setUser(newUser);
         await storage.setItem('token', newToken);
         await storage.setItem('user', JSON.stringify(newUser));
-        };
+        
     }, []);
 
 
-    const logout = React.useMemo(() => {
-        return async () => {
+    const logout = useCallback(async () => {
         setToken(null);
         setUser(null);
         await storage.deleteItem('token');
         await storage.deleteItem('user');
-        };
+        
     }, []);
 
     const isAuthenticated = token !== null;

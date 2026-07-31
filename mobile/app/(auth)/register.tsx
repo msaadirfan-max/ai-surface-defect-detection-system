@@ -43,8 +43,7 @@ export default function RegisterScreen() {
         email,
         password,
       });
-      const { token, user: registeredUser } = response.data;
-      await login(token, registeredUser);
+      
       setSuccess(true);
       setTimeout(() => {
         router.replace("../login");

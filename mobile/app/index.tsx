@@ -1,4 +1,3 @@
-import "expo-router/entry";
 import { Redirect } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { View, ActivityIndicator } from "react-native";
@@ -14,9 +13,7 @@ export default function Index() {
     );
   }
 
-  return isAuthenticated ? (
-    <Redirect href="/(tabs)/upload" />
-  ) : (
-    <Redirect href="/(auth)/login" />
-  );
+  return isAuthenticated
+    ? <Redirect href="/(tabs)/upload" />
+    : <Redirect href="/(auth)/login" />;
 }

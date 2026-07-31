@@ -1,8 +1,12 @@
 import React from "react";
-import { getConfidenceColor } from "../utils/confidence";
-import { View, Text, Image, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 
-// Define the props for the ResultCard component
 interface ResultCardProps {
   status: "normal" | "defective";
   confidence: number;
@@ -12,168 +16,207 @@ interface ResultCardProps {
   gradCamLoading: boolean;
 }
 
-export default function ResultCard({
+const ResultCard: React.FC<ResultCardProps> = ({
   status,
   confidence,
   imageUrl,
   inferenceTimeMs,
   gradCam,
   gradCamLoading,
-}: ResultCardProps) {
-  // Format percentage 
-  const confidencePct = (
-    confidence <= 1 ? confidence * 100 : confidence
-  ).toFixed(1);
-  
-  
+}) => {
+  const isPass = status === "normal";
+
+  // Build the base64 URI for Grad-CAM
+  const gradCamUri = gradCam
+    ? gradCam.startsWith("data:")
+      ? gradCam
+      : `data:image/png;base64,${gradCam}`
+    : null;
 
   return (
     <View style={styles.card}>
-      {/* Dynamic Badge */}
-      <View style={styles.badgeContainer}>
-        {status === "normal" ? (
-          <Text style={styles.passBadge}>✓ PASS</Text>
-        ) : (
-          <Text style={styles.failBadge}>✗ FAIL</Text>
-        )}
-      </View>
 
-      {/* Metrics */}
-      <View style={styles.metricsContainer}>
-        <Text style={styles.metricText}>
-          Confidence:{" "}
-          <Text style={getConfidenceColor(confidence)}>
-            {confidencePct}%
+      {/* Header row */}
+      <View style={styles.headerRow}>
+        <View style={[styles.badge, isPass ? styles.badgePass : styles.badgeFail]}>
+          <Text style={[styles.badgeText, isPass ? styles.badgeTextPass : styles.badgeTextFail]}>
+            {isPass ? "✓ PASS" : "✗ FAIL"}
           </Text>
-        </Text>
-
-        <Text style={styles.metricText}>
-          Inference Time:{" "}
-          <Text style={styles.boldText}>{inferenceTimeMs} ms</Text>
-        </Text>
+        </View>
+        <View style={styles.metrics}>
+          <Text style={[styles.confidence, isPass ? styles.confidencePass : styles.confidenceFail]}>
+            {(confidence * 100).toFixed(1)}%
+          </Text>
+          <Text style={styles.inferenceTime}>{inferenceTimeMs.toFixed(0)} ms</Text>
+        </View>
       </View>
 
-      {/* Two Column Grid */}
-      <View style={styles.gridContainer}>
-        <View style={styles.column}>
-          <Text style={styles.columnTitle}>Original Image</Text>
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </View>
+      <View style={styles.divider} />
 
-        <View style={styles.column}>
-          <Text style={styles.columnTitle}>Prediction Heatmap</Text>
-          {gradCamLoading ? (
-            <View style={styles.placeholderContainer}>
-              <ActivityIndicator size="small" color="#3b82f6" />
-              <Text style={styles.placeholderText}>Loading...</Text>
-            </View>
-          ) : gradCam ? (
+      {/* Images side by side */}
+      <View style={styles.imagesRow}>
+
+        {/* Original image */}
+        <View style={styles.imageContainer}>
+          <Text style={styles.imageLabel}>Original</Text>
+          <View style={styles.imageBox}>
             <Image
-              source={{ uri: gradCam }}
+              source={{ uri: imageUrl }}
               style={styles.image}
-              resizeMode="cover"
+              resizeMode="contain"
             />
-          ) : (
-            <View style={styles.placeholderContainer}>
-              <Text style={styles.placeholderText}>No Grad-CAM available</Text>
-            </View>
-          )}
+          </View>
         </View>
+
+        {/* Grad-CAM */}
+        <View style={styles.imageContainer}>
+          <Text style={styles.imageLabel}>Grad-CAM</Text>
+          <View style={styles.imageBox}>
+            {gradCamLoading ? (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator size="small" color="#3b82f6" />
+                <Text style={styles.loadingText}>Generating...</Text>
+              </View>
+            ) : gradCamUri ? (
+              // React Native uses source={{ uri }} not src=""
+              <Image
+                source={{ uri: gradCamUri }}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={styles.loadingBox}>
+                <Text style={styles.unavailableText}>Not available</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
       </View>
+
+      {/* Status bar */}
+      <View style={[styles.statusBar, isPass ? styles.statusBarPass : styles.statusBarFail]}>
+        <Text style={[styles.statusText, isPass ? styles.statusTextPass : styles.statusTextFail]}>
+          {isPass
+            ? "No defects detected"
+            : "Defect detected"}
+        </Text>
+      </View>
+
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 6,
-    elevation: 4,
-    marginVertical: 10,
   },
-  badgeContainer: {
-    marginBottom: 16,
-  },
-  passBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 9999,
-    backgroundColor: "#dcfce7",
-    color: "#15803d",
-    borderWidth: 1,
-    borderColor: "#86efac",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  failBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 9999,
-    backgroundColor: "#fee2e2",
-    color: "#dc2626",
-    borderWidth: 1,
-    borderColor: "#fca5a5",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  metricsContainer: {
-    gap: 6,
-    marginBottom: 20,
-  },
-  metricText: {
-    fontSize: 14,
-    color: "#374151",
-  },
-  confidenceBadge: {
-    fontWeight: "bold",
-  },
-  boldText: {
-    fontWeight: "600",
-    color: "#111827",
-  },
-  gridContainer: {
+  headerRow: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  column: {
+  badge: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  badgePass: {
+    backgroundColor: "#f0fdf4",
+    borderColor: "#bbf7d0",
+  },
+  badgeFail: {
+    backgroundColor: "#fef2f2",
+    borderColor: "#fecaca",
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  badgeTextPass: { color: "#15803d" },
+  badgeTextFail: { color: "#dc2626" },
+  metrics: {
+    alignItems: "flex-end",
+  },
+  confidence: {
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  confidencePass: { color: "#16a34a" },
+  confidenceFail: { color: "#dc2626" },
+  inferenceTime: {
+    fontSize: 11,
+    color: "#9ca3af",
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#f3f4f6",
+    marginBottom: 12,
+  },
+  imagesRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  imageContainer: {
     flex: 1,
   },
-  columnTitle: {
-    fontSize: 13,
+  imageLabel: {
+    fontSize: 10,
     fontWeight: "600",
-    color: "#4b5563",
-    marginBottom: 8,
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  imageBox: {
+    height: 140,
+    backgroundColor: "#111827",
+    borderRadius: 10,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
     width: "100%",
-    height: 140,
-    borderRadius: 8,
-    backgroundColor: "#f3f4f6",
+    height: "100%",
   },
-  placeholderContainer: {
-    width: "100%",
-    height: 140,
-    borderRadius: 8,
-    backgroundColor: "#f3f4f6",
+  loadingBox: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 8,
+    gap: 6,
   },
-  placeholderText: {
-    fontSize: 12,
+  loadingText: {
+    fontSize: 11,
+    color: "#6b7280",
+  },
+  unavailableText: {
+    fontSize: 11,
     color: "#9ca3af",
-    textAlign: "center",
-    marginTop: 4,
   },
+  statusBar: {
+    borderRadius: 8,
+    padding: 10,
+  },
+  statusBarPass: { backgroundColor: "#f0fdf4" },
+  statusBarFail: { backgroundColor: "#fef2f2" },
+  statusText: {
+    fontSize: 12,
+    textAlign: "center",
+  },
+  statusTextPass: { color: "#15803d" },
+  statusTextFail: { color: "#dc2626" },
 });
+
+export default ResultCard;

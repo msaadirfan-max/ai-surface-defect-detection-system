@@ -102,7 +102,7 @@ const Upload = () => {
 
       {/* Two column layout fills remaining height — no scrolling */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ── LEFT PANEL ─────────────────────────────────────────── */}
+        {/* ── LEFT PANEL ─────── */}
         <div className="w-full md:w-1/2 flex flex-col border-r border-gray-200 bg-white overflow-y-auto">
           {/* Panel header */}
           <div className="px-6 pt-6 pb-4 border-b border-gray-100">
