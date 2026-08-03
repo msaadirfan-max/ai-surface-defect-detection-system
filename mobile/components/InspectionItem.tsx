@@ -17,7 +17,10 @@ interface InspectionModalProps {
   onClose: () => void; // called when user closes it
 }
 
-export const InspectionItem = ({ inspection, onClose }: InspectionModalProps) => {
+export const InspectionItem = ({
+  inspection,
+  onClose,
+}: InspectionModalProps) => {
   // If inspection is null, render nothing
   if (!inspection) return null;
 
@@ -37,6 +40,14 @@ export const InspectionItem = ({ inspection, onClose }: InspectionModalProps) =>
       ? inspection.gradCamUrl
       : `data:image/png;base64,${inspection.gradCamUrl}`
     : null;
+
+  // userId is populated by the backend as an object { _id, username, email }.
+  const usernameDisplay =
+    typeof inspection.userId === "object" && inspection.userId !== null
+      ? inspection.userId.username ||
+        inspection.userId.email?.split("@")[0] ||
+        "Unknown User"
+      : "Unknown User";
 
   return (
     <Modal
@@ -105,11 +116,11 @@ export const InspectionItem = ({ inspection, onClose }: InspectionModalProps) =>
                 </View>
               </View>
 
-              {/* INFERENCE TIME METRIC */}
+              {/* User Details */}
               <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>INFERENCE TIME</Text>
-                <Text style={styles.metricValue}>
-                  {inspection.inferenceTimeMs} ms
+                <Text style={styles.metricLabel}>USER</Text>
+                <Text style={styles.metricValue} numberOfLines={1}>
+                  {usernameDisplay}
                 </Text>
               </View>
 
@@ -118,7 +129,7 @@ export const InspectionItem = ({ inspection, onClose }: InspectionModalProps) =>
                 <Text style={styles.metricLabel}>DATE</Text>
                 <Text style={styles.metricDateValue}>
                   {new Date(
-                    inspection.createdAt || Date.now(),
+                    inspection.createdAt || Date.now()
                   ).toLocaleDateString()}
                 </Text>
               </View>
@@ -276,7 +287,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   metricValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: "#1f2937",
     marginTop: 2,

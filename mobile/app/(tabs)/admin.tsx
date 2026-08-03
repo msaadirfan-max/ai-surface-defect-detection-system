@@ -63,7 +63,7 @@ export default function AdminScreen() {
       setInspLoading(true);
       try {
         const response = await apiClient.get("/api/admin/inspections", {
-          params: { page: currentPage, limit: 10 },
+          params: { page: currentPage, limit: 5 },
         });
         setInspections(response.data.inspections || []);
         setTotalPages(response.data.totalPages || 1);
@@ -305,65 +305,79 @@ export default function AdminScreen() {
 
   // ── Inspection card ───────────────────────────
   const renderInspectionCard = ({ item }: { item: Inspection }) => {
-    const isDefective = item.status?.toLowerCase() === "defective";
-    return (
-      <TouchableOpacity
-        style={styles.cardItem}
-        onPress={() => setSelectedInspection(item)}
-        activeOpacity={0.7}
-      >
-        {/* Thumbnail */}
-        <Image
-          source={{ uri: item.imageUrl }}
-          style={styles.cardThumbnail}
-          resizeMode="cover"
-        />
+  const isDefective = item.status?.toLowerCase() === "defective";
 
-        {/* Details */}
-        <View style={styles.cardDetails}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={styles.cardId}>
-              #{item._id ? item._id.slice(-6) : "N/A"}
-            </Text>
-            <View
+  // Find the matching user from the users array by ID
+  const inspector = users.find(
+    (u) => u._id === (typeof item.userId === "string" ? item.userId : item.userId?._id)
+  );
+
+  // Fallback chain: inspector username -> inspector email -> item username -> "Unknown User"
+  const displayName =
+    inspector?.username ||
+    inspector?.email?.split("@")[0] ||
+    "Unknown User";
+
+  return (
+    <TouchableOpacity
+      style={styles.cardItem}
+      onPress={() => setSelectedInspection(item)}
+      activeOpacity={0.7}
+    >
+      {/* Thumbnail */}
+      <Image
+        source={{ uri: item.imageUrl }}
+        style={styles.cardThumbnail}
+        resizeMode="cover"
+      />
+
+      {/* Details */}
+      <View style={styles.cardDetails}>
+        <View style={styles.cardHeaderRow}>
+          <Text style={styles.cardId}>
+            #{item._id ? item._id.slice(-6) : "N/A"}
+          </Text>
+          <View
+            style={[
+              styles.cardBadge,
+              isDefective ? styles.cardBadgeFail : styles.cardBadgePass,
+            ]}
+          >
+            <Text
               style={[
-                styles.cardBadge,
-                isDefective ? styles.cardBadgeFail : styles.cardBadgePass,
+                styles.cardBadgeText,
+                isDefective
+                  ? styles.cardBadgeTextFail
+                  : styles.cardBadgeTextPass,
               ]}
             >
-              <Text
-                style={[
-                  styles.cardBadgeText,
-                  isDefective
-                    ? styles.cardBadgeTextFail
-                    : styles.cardBadgeTextPass,
-                ]}
-              >
-                {isDefective ? "✗ FAIL" : "✓ PASS"}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.cardDate}>
-            {new Date(item.createdAt).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </Text>
-
-          <View style={styles.cardFooterRow}>
-            <Text style={styles.cardConfidence}>
-              {(item.confidence * 100).toFixed(1)}% confidence
-            </Text>
-            <Text style={styles.cardTime}>
-              {item.inferenceTimeMs?.toFixed(0)} ms
+              {isDefective ? "✗ FAIL" : "✓ PASS"}
             </Text>
           </View>
         </View>
-      </TouchableOpacity>
-    );
-  };
+
+        <Text style={styles.cardDate}>
+          {new Date(item.createdAt).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
+        </Text>
+
+        <View style={styles.cardFooterRow}>
+          <Text style={styles.cardConfidence}>
+            {(item.confidence * 100).toFixed(1)}% confidence
+          </Text>
+          
+          {/* Displays Username instead of Inference Time */}
+          <Text style={styles.cardTime} numberOfLines={1}>
+            {displayName}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
   // ── Full-screen loading ────────────────────────────────────────────────────
   if (loading && !refreshing) {
