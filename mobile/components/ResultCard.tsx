@@ -16,14 +16,7 @@ interface ResultCardProps {
   gradCamLoading: boolean;
 }
 
-const ResultCard: React.FC<ResultCardProps> = ({
-  status,
-  confidence,
-  imageUrl,
-  inferenceTimeMs,
-  gradCam,
-  gradCamLoading,
-}) => {
+export const ResultCard = ({status,confidence,imageUrl,inferenceTimeMs,gradCam,gradCamLoading}: ResultCardProps) => {
   const isPass = status === "normal";
 
   // Build the base64 URI for Grad-CAM
@@ -70,7 +63,7 @@ const ResultCard: React.FC<ResultCardProps> = ({
 
         {/* Grad-CAM */}
         <View style={styles.imageContainer}>
-          <Text style={styles.imageLabel}>Grad-CAM</Text>
+          <Text style={styles.imageLabel}>Prediction Heatmap</Text>
           <View style={styles.imageBox}>
             {gradCamLoading ? (
               <View style={styles.loadingBox}>
