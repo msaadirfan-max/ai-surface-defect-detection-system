@@ -1,50 +1,56 @@
-import {StyleSheet, ViewStyle, TextStyle} from "react-native";
+import { StyleSheet, ViewStyle, TextStyle } from "react-native";
 
-export const getConfidenceColor = (confidence: number): (ViewStyle|TextStyle) => {
+interface ConfidenceStylePair {
+  container: ViewStyle;
+  text: TextStyle;
+}
+
+export const getConfidenceColor = (confidence: number): ConfidenceStylePair => {
   const pct = confidence <= 1 ? confidence * 100 : confidence;
+
   if (pct >= 90) {
-    return styles.highConfidence;
+    return {
+      container: styles.highConfidenceContainer,
+      text: styles.highConfidenceText,
+    };
   }
   if (pct >= 50) {
-    return styles.mediumConfidence;
+    return {
+      container: styles.mediumConfidenceContainer,
+      text: styles.mediumConfidenceText,
+    };
   }
-  
-  return styles.lowConfidence;
+  return {
+    container: styles.lowConfidenceContainer,
+    text: styles.lowConfidenceText,
+  };
 };
 
 const styles = StyleSheet.create({
-  highConfidence: {
+  // High Confidence (Green)
+  highConfidenceContainer: {
     backgroundColor: "#d1fae5",
-    color: "#065f46",
     borderColor: "#10b981",
-    paddingHorizontal: 8,   
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 12,
-    fontWeight: "500",
-    marginLeft: 6,
   },
-  mediumConfidence: {
+  highConfidenceText: {
+    color: "#065f46",
+  },
+
+  // Medium Confidence (Yellow)
+  mediumConfidenceContainer: {
     backgroundColor: "#fef3c7",
-    color: "#92400e",
     borderColor: "#f59e0b",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 12,
-    fontWeight: "500",
-    marginLeft: 6,
   },
-  lowConfidence: {
+  mediumConfidenceText: {
+    color: "#92400e",
+  },
+
+  // Low Confidence (Red)
+  lowConfidenceContainer: {
     backgroundColor: "#fee2e2",
-    color: "#991b1b",
     borderColor: "#ef4444",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 12,
-    fontWeight: "500",
-    marginLeft: 6,
+  },
+  lowConfidenceText: {
+    color: "#991b1b",
   },
 });
-
